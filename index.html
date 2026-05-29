@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>The Realms</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="logo">
+            The Realms
+        </div>
+        <button class="donate" onclick="toggleQR()">Donate</button>
+    </div>
+    <div class="qr-popup" id="qrPopup">
+        <div class="qr-content">
+            <img src="qr-code.png" alt="QR Code for Donation">
+            <p>Scan with your GCash app</p>
+            <button onclick="toggleQR()">Close</button>
+        </div>
+    </div>
+    <div class="centered-div">
+        <h1 class="title"> The Realms </h1>
+    </div>
+</body>
+</html>
