@@ -1,0 +1,268 @@
+/* Trading hub — Dashboard module
+   Builds on variables/nav/modal styles defined in ../style.css */
+
+html, body.trading-body {
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+}
+
+.trading-body {
+    display: block;
+}
+
+.nav-logo {
+    text-decoration: none;
+}
+.nav-right {
+    margin-left: auto;
+}
+.nav-crumb {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-right: auto;
+    margin-left: 8px;
+}
+
+/* ── Layout ── */
+.dash-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+/* ── Signed-out / empty states ── */
+.state-panel {
+    text-align: center;
+    padding: 80px 20px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+.state-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.state-sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+}
+
+/* ── Dashboard header ── */
+.dash-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+.dash-eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+}
+.dash-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* ── Stat cards ── */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+}
+@media (max-width: 720px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+.stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+}
+.stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.stat-foot {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+.stat-foot.positive { color: #34D399; }
+.stat-foot.negative { color: #F87171; }
+
+.mini-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface2);
+    overflow: hidden;
+    margin-top: 6px;
+}
+.mini-bar-fill {
+    height: 100%;
+    background: var(--blue);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* ── Panels ── */
+.panel-row {
+    display: grid;
+    gap: 16px;
+}
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+.panel-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.activity-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.activity-empty {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+.activity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+.activity-row:last-child { border-bottom: none; }
+.activity-date { color: var(--text-dim); }
+.activity-balance { font-weight: 600; }
+.activity-delta.positive { color: #34D399; }
+.activity-delta.negative { color: #F87171; }
+
+/* ── Nav links between trading pages ── */
+.nav-link-active {
+    color: var(--blue) !important;
+}
+
+/* ── Filter chips ── */
+.filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.filter-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.filter-chip:hover { color: var(--text); }
+.filter-chip.active {
+    background: var(--blue-dim);
+    border-color: rgba(59,130,246,0.4);
+    color: var(--blue);
+}
+
+/* ── Challenge list ── */
+.challenge-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.challenge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.challenge-info { flex: 1; min-width: 220px; }
+.challenge-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.challenge-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+}
+.status-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 9px;
+    border-radius: 999px;
+    text-transform: capitalize;
+}
+.status-badge.active    { background: rgba(52,211,153,0.15); color: #34D399; }
+.status-badge.paused    { background: rgba(251,191,36,0.15); color: #FBBF24; }
+.status-badge.archived  { background: rgba(125,133,144,0.15); color: var(--text-dim); }
+.status-badge.completed { background: rgba(167,139,250,0.15); color: #A78BFA; }
+
+.challenge-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.challenge-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.chip-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.chip-btn:hover {
+    background: var(--surface);
+    border-color: rgba(255,255,255,0.15);
+}
+.chip-btn.danger { color: #F87171; }
+.chip-btn.danger:hover { border-color: rgba(248,113,113,0.4); }

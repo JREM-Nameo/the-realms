@@ -2,27 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Realms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="nav-bar">
-        <div class="logo">
-            The Realms
+
+    <nav class="nav">
+        <span class="nav-logo">The Realms</span>
+        <div class="nav-right">
+            <span class="nav-status hidden" id="signedInIndicator">
+                <span class="status-dot"></span>
+                <span id="signedInEmail"></span>
+            </span>
+            <button class="nav-link hidden" id="signOutBtn">Sign Out</button>
+            <button class="nav-link" id="signInBtn">Sign In</button>
+            <button class="nav-donate" onclick="toggleQR()">Donate</button>
         </div>
-        <button class="donate" onclick="toggleQR()">Donate</button>
-    </div>
-    <div class="qr-popup" id="qrPopup">
-        <div class="qr-content">
-            <img src="qr-code.png" alt="QR Code for Donation">
-            <p>Scan with your GCash app</p>
-            <button onclick="toggleQR()">Close</button>
+    </nav>
+
+    <div class="overlay" id="qrPopup" onclick="handleOverlayClick(event)">
+        <div class="qr-card">
+            <button class="qr-close" onclick="toggleQR()" aria-label="Close">&times;</button>
+            <p class="qr-title">Support The Realms</p>
+            <div class="qr-img-wrap">
+                <img src="gcash-qr.jpg" alt="GCash QR Code">
+            </div>
+            <p class="qr-sub">Scan with your GCash app</p>
         </div>
     </div>
-    <div class="centered-div">
-        <h1 class="title"> The Realms </h1>
+
+    <div class="overlay" id="authPopup" onclick="handleAuthOverlayClick(event)">
+        <div class="qr-card auth-card">
+            <button class="qr-close" onclick="toggleAuth()" aria-label="Close">&times;</button>
+
+            <div class="auth-tabs" id="authTabs">
+                <button type="button" class="mode-btn active" data-tab="signin">Sign In</button>
+                <button type="button" class="mode-btn" data-tab="signup">Sign Up</button>
+            </div>
+
+            <div class="field">
+                <label for="authEmail">Email</label>
+                <input type="email" id="authEmail" placeholder="you@example.com">
+            </div>
+            <div class="field">
+                <label for="authPassword">Password</label>
+                <input type="password" id="authPassword" placeholder="••••••••">
+            </div>
+
+            <p class="auth-error" id="authError"></p>
+
+            <button class="btn-primary" id="authSubmitBtn">Sign In</button>
+
+            <div class="divider"><span>or</span></div>
+
+            <button class="btn-google" id="googleBtn">
+                <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.19l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.69A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.69V4.98H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.02l2.99-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.98l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+                Continue with Google
+            </button>
+        </div>
     </div>
+
+    <div class="page-body">
+        <canvas class="dot-grid" id="dotGrid" aria-hidden="true"></canvas>
+
+        <div class="hero-text">
+            <h1 class="hero-title">The Realms</h1>
+            <p class="hero-sub">A place for things I made.</p>
+        </div>
+
+        <div class="card-grid">
+            <a class="card" href="wild/index.html ">
+                <div class="card-icon">⚔️</div>
+                <div class="card-body">
+                    <p class="card-name">The Games</p>
+                    <p class="card-desc">A world worth getting lost in.</p>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a class="card" href="trading/index.html">
+                <div class="card-icon">📈</div>
+                <div class="card-body">
+                    <p class="card-name">Trading</p>
+                    <p class="card-desc">Where compounding does the work.</p>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+    <script type="module" src="js/auth.js"></script>
 </body>
 </html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard · Trading — The Realms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="trading-body">
+
+    <nav class="nav">
+        <a class="nav-logo" href="../index.html">The Realms</a>
+        <span class="nav-crumb">/ Trading</span>
+        <a class="nav-link nav-link-active" href="index.html">Dashboard</a>
+        <a class="nav-link" href="challenges.html">Challenges</a>
+        <div class="nav-right">
+            <span class="nav-status hidden" id="signedInIndicator">
+                <span class="status-dot"></span>
+                <span id="signedInEmail"></span>
+            </span>
+            <button class="nav-link hidden" id="signOutBtn">Sign Out</button>
+            <button class="nav-link" id="signInBtn">Sign In</button>
+        </div>
+    </nav>
+
+    <!-- ── Auth modal (same pattern as main site) ── -->
+    <div class="overlay" id="authPopup" onclick="handleAuthOverlayClick(event)">
+        <div class="qr-card auth-card">
+            <button class="qr-close" onclick="toggleAuth()" aria-label="Close">&times;</button>
+            <div class="auth-tabs" id="authTabs">
+                <button type="button" class="mode-btn active" data-tab="signin">Sign In</button>
+                <button type="button" class="mode-btn" data-tab="signup">Sign Up</button>
+            </div>
+            <div class="field">
+                <label for="authEmail">Email</label>
+                <input type="email" id="authEmail" placeholder="you@example.com">
+            </div>
+            <div class="field">
+                <label for="authPassword">Password</label>
+                <input type="password" id="authPassword" placeholder="••••••••">
+            </div>
+            <p class="auth-error" id="authError"></p>
+            <button class="btn-primary" id="authSubmitBtn">Sign In</button>
+            <div class="divider"><span>or</span></div>
+            <button class="btn-google" id="googleBtn">
+                <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.19l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.69A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.69V4.98H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.02l2.99-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.98l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+                Continue with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Create Challenge modal ── -->
+    <div class="overlay" id="createPopup" onclick="handleCreateOverlayClick(event)">
+        <div class="qr-card auth-card">
+            <button class="qr-close" onclick="toggleCreate()" aria-label="Close">&times;</button>
+            <p class="qr-title" style="margin-bottom:0;">Start a Challenge</p>
+            <div class="field">
+                <label for="cName">Challenge name</label>
+                <input type="text" id="cName" placeholder="e.g. $100 → $1,000">
+            </div>
+            <div class="field">
+                <label for="cBalance">Starting balance</label>
+                <input type="number" id="cBalance" placeholder="100" min="0" step="0.01">
+            </div>
+            <div class="field">
+                <label for="cTarget">Daily target %</label>
+                <input type="number" id="cTarget" placeholder="2" min="0.01" step="0.01">
+            </div>
+            <div class="field">
+                <label for="cDuration">Duration (days)</label>
+                <input type="number" id="cDuration" placeholder="30" min="1" step="1">
+            </div>
+            <p class="auth-error" id="createError"></p>
+            <button class="btn-primary" id="createSubmitBtn">Create Challenge</button>
+        </div>
+    </div>
+
+    <!-- ── Log Balance modal ── -->
+    <div class="overlay" id="logPopup" onclick="handleLogOverlayClick(event)">
+        <div class="qr-card auth-card">
+            <button class="qr-close" onclick="toggleLog()" aria-label="Close">&times;</button>
+            <p class="qr-title" style="margin-bottom:0;">Log Today's Balance</p>
+            <div class="field">
+                <label for="lBalance">Current balance</label>
+                <input type="number" id="lBalance" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="field">
+                <label for="lNote">Note (optional)</label>
+                <input type="text" id="lNote" placeholder="What happened today?">
+            </div>
+            <p class="auth-error" id="logError"></p>
+            <button class="btn-primary" id="logSubmitBtn">Save Entry</button>
+        </div>
+    </div>
+
+    <main class="dash-wrap">
+
+        <!-- ── Signed-out gate ── -->
+        <section class="state-panel hidden" id="signedOutState">
+            <h1 class="state-title">Track your growth challenge</h1>
+            <p class="state-sub">Sign in to create a challenge and start logging your daily progress.</p>
+            <button class="btn-primary" id="gateSignInBtn">Sign In</button>
+        </section>
+
+        <!-- ── Signed-in, no active challenge ── -->
+        <section class="state-panel hidden" id="emptyState">
+            <h1 class="state-title">No active challenge yet</h1>
+            <p class="state-sub">Set a starting balance and a daily target, and this dashboard will track every day for you.</p>
+            <button class="btn-primary" id="emptyCreateBtn">Start a Challenge</button>
+        </section>
+
+        <!-- ── Dashboard ── -->
+        <section class="hidden" id="dashboardState">
+            <header class="dash-header">
+                <div>
+                    <p class="dash-eyebrow" id="challengeStatus">Active Challenge</p>
+                    <h1 class="dash-title" id="challengeName">—</h1>
+                </div>
+                <div class="dash-actions">
+                    <button class="btn-primary" id="logBtn">Log Today's Balance</button>
+                </div>
+            </header>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <p class="stat-label">Current Balance</p>
+                    <p class="stat-value" id="statBalance">—</p>
+                    <p class="stat-foot" id="statBalanceDelta">—</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Today's Target</p>
+                    <p class="stat-value" id="statTarget">—</p>
+                    <p class="stat-foot" id="statTargetGap">—</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Progress</p>
+                    <p class="stat-value" id="statProgress">—</p>
+                    <div class="mini-bar"><div class="mini-bar-fill" id="statProgressBar"></div></div>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">Current Streak</p>
+                    <p class="stat-value" id="statStreak">—</p>
+                    <p class="stat-foot" id="statDays">—</p>
+                </div>
+            </div>
+
+            <div class="panel-row">
+                <div class="panel">
+                    <p class="panel-title">Recent Activity</p>
+                    <ul class="activity-list" id="activityList">
+                        <li class="activity-empty">No entries yet — log today's balance to get started.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="../js/auth.js"></script>
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>
