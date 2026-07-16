@@ -2,27 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Realms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="nav-bar">
-        <div class="logo">
-            The Realms
+
+    <nav class="nav">
+        <span class="nav-logo">The Realms</span>
+        <button class="nav-donate" onclick="toggleQR()">Donate</button>
+    </nav>
+
+    <div class="overlay" id="qrPopup" onclick="handleOverlayClick(event)">
+        <div class="qr-card">
+            <button class="qr-close" onclick="toggleQR()" aria-label="Close">&times;</button>
+            <p class="qr-title">Support The Realms</p>
+            <div class="qr-img-wrap">
+                <img src="qr-code.png" alt="GCash QR Code">
+            </div>
+            <p class="qr-sub">Scan with your GCash app</p>
         </div>
-        <button class="donate" onclick="toggleQR()">Donate</button>
     </div>
-    <div class="qr-popup" id="qrPopup">
-        <div class="qr-content">
-            <img src="qr-code.png" alt="QR Code for Donation">
-            <p>Scan with your GCash app</p>
-            <button onclick="toggleQR()">Close</button>
+
+    <div class="page-body">
+        <canvas class="dot-grid" id="dotGrid" aria-hidden="true"></canvas>
+
+        <div class="hero-text">
+            <h1 class="hero-title">The Realms</h1>
+            <p class="hero-sub">A place for things I made.</p>
         </div>
+
+        <a class="card" href="game.html">
+            <div class="card-icon">⚔️</div>
+            <div class="card-body">
+                <p class="card-name">The Games</p>
+                <p class="card-desc">A world worth getting lost in.</p>
+            </div>
+            <span class="card-arrow">→</span>
+        </a>
     </div>
-    <div class="centered-div">
-        <h1 class="title"> The Realms </h1>
-    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
