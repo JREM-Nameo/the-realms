@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Challenges · Trading — The Realms</title>
+    <title>Analytics · Trading — The Realms</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -16,9 +16,9 @@
         <a class="nav-logo" href="../index.html">The Realms</a>
         <span class="nav-crumb">/ Trading</span>
         <a class="nav-link" href="index.html">Dashboard</a>
-        <a class="nav-link nav-link-active" href="challenges.html">Challenges</a>
+        <a class="nav-link" href="challenges.html">Challenges</a>
         <a class="nav-link" href="progress.html">Progress</a>
-        <a class="nav-link" href="analytics.html">Analytics</a>
+        <a class="nav-link nav-link-active" href="analytics.html">Analytics</a>
         <div class="nav-right">
             <span class="nav-status hidden" id="signedInIndicator">
                 <span class="status-dot"></span>
@@ -29,7 +29,7 @@
         </div>
     </nav>
 
-    <!-- ── Auth modal (same pattern as main site) ── -->
+    <!-- ── Auth modal ── -->
     <div class="overlay" id="authPopup" onclick="handleAuthOverlayClick(event)">
         <div class="qr-card auth-card">
             <button class="qr-close" onclick="toggleAuth()" aria-label="Close">&times;</button>
@@ -55,68 +55,63 @@
         </div>
     </div>
 
-    <!-- ── Create / Edit Challenge modal (shared) ── -->
-    <div class="overlay" id="formPopup" onclick="handleFormOverlayClick(event)">
-        <div class="qr-card auth-card">
-            <button class="qr-close" onclick="toggleForm()" aria-label="Close">&times;</button>
-            <p class="qr-title" style="margin-bottom:0;" id="formTitle">Start a Challenge</p>
-            <div class="field">
-                <label for="fName">Challenge name</label>
-                <input type="text" id="fName" placeholder="e.g. $100 → $1,000">
-            </div>
-            <div class="field">
-                <label for="fBalance">Starting balance</label>
-                <input type="number" id="fBalance" placeholder="100" min="0" step="0.01">
-            </div>
-            <div class="field">
-                <label for="fTarget">Daily target %</label>
-                <input type="number" id="fTarget" placeholder="2" min="0.01" step="0.01">
-            </div>
-            <div class="field">
-                <label for="fDuration">Duration (days)</label>
-                <input type="number" id="fDuration" placeholder="30" min="1" step="1">
-            </div>
-            <p class="auth-error" id="formError"></p>
-            <button class="btn-primary" id="formSubmitBtn">Create Challenge</button>
-        </div>
-    </div>
-
     <main class="dash-wrap">
 
         <section class="state-panel hidden" id="signedOutState">
-            <h1 class="state-title">Manage your challenges</h1>
-            <p class="state-sub">Sign in to create, edit, pause, or archive your growth challenges.</p>
+            <h1 class="state-title">Your growth, charted</h1>
+            <p class="state-sub">Sign in to see your equity curve against your daily targets.</p>
             <button class="btn-primary" id="gateSignInBtn">Sign In</button>
         </section>
 
-        <section class="hidden" id="managedState">
+        <section class="state-panel hidden" id="noChallengeState">
+            <h1 class="state-title">No challenges yet</h1>
+            <p class="state-sub">Create a challenge first, then come back here to see how it's tracking.</p>
+            <a class="btn-primary" href="challenges.html" style="display:inline-block; text-decoration:none;">Go to Challenges</a>
+        </section>
+
+        <section class="hidden" id="analyticsState">
             <header class="dash-header">
                 <div>
-                    <p class="dash-eyebrow">Trading</p>
-                    <h1 class="dash-title">Challenges</h1>
+                    <p class="dash-eyebrow">Analytics</p>
+                    <h1 class="dash-title" id="analyticsChallengeName">—</h1>
                 </div>
                 <div class="dash-actions">
-                    <button class="btn-primary" id="newChallengeBtn">New Challenge</button>
+                    <select id="challengeSelect" class="challenge-select"></select>
                 </div>
             </header>
 
-            <div class="filter-row" id="filterRow">
-                <button class="filter-chip active" data-filter="all">All</button>
-                <button class="filter-chip" data-filter="active">Active</button>
-                <button class="filter-chip" data-filter="paused">Paused</button>
-                <button class="filter-chip" data-filter="completed">Completed</button>
-                <button class="filter-chip" data-filter="archived">Archived</button>
+            <div class="chart-stats-row" id="chartStatsRow">
+                <div class="chart-stat">
+                    <p class="stat-label">Total Return</p>
+                    <p class="stat-value" id="statTotalReturn">—</p>
+                </div>
+                <div class="chart-stat">
+                    <p class="stat-label">Final Target</p>
+                    <p class="stat-value" id="statFinalTarget">—</p>
+                </div>
+                <div class="chart-stat">
+                    <p class="stat-label">Days Logged</p>
+                    <p class="stat-value" id="statDaysLogged">—</p>
+                </div>
             </div>
 
-            <ul class="challenge-list" id="challengeList">
-                <li class="activity-empty">No challenges yet — create one to get started.</li>
-            </ul>
+            <div class="panel chart-card">
+                <div class="chart-card-head">
+                    <p class="panel-title">Equity Curve vs. Target</p>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-dot legend-dot-actual"></span>Actual</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot-target"></span>Target</span>
+                    </div>
+                </div>
+                <div id="chartContainer"></div>
+                <p class="activity-empty hidden" id="noEntriesMsg">No entries logged yet for this challenge — log a few days on the Progress page to see your curve here.</p>
+            </div>
         </section>
 
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="../js/auth.js"></script>
-    <script type="module" src="challenges.js"></script>
+    <script type="module" src="analytics.js"></script>
 </body>
 </html>

@@ -347,3 +347,91 @@ html, body.trading-body {
     border-radius: 50%;
     width: 30px; height: 30px;
 }
+
+/* ── Analytics: quick stats row ── */
+.chart-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+}
+@media (max-width: 720px) {
+    .chart-stats-row { grid-template-columns: 1fr; }
+}
+.chart-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+}
+.chart-stat .stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+}
+.chart-stat .stat-value.positive { color: #34D399; }
+.chart-stat .stat-value.negative { color: #F87171; }
+
+/* ── Analytics: chart card ── */
+.chart-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.chart-card-head .panel-title { margin-bottom: 0; }
+
+.chart-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.legend-dot-actual { background: var(--blue); }
+.legend-dot-target {
+    background: transparent;
+    border: 1.5px dashed var(--text-dim);
+    border-radius: 50%;
+}
+
+.chart-svg {
+    width: 100%;
+    height: auto;
+    margin-top: 12px;
+}
+.chart-gridline {
+    stroke: var(--border);
+    stroke-width: 1;
+}
+.chart-axis-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    fill: var(--text-dim);
+}
+.chart-line-target {
+    stroke: var(--text-dim);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+}
+.chart-line-actual {
+    stroke: var(--blue);
+    stroke-width: 2.5;
+}
+.chart-point {
+    fill: var(--blue);
+    stroke: var(--surface);
+    stroke-width: 1.5;
+}
