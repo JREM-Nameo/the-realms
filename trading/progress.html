@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Challenges · Trading — The Realms</title>
+    <title>Progress · Trading — The Realms</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
         <a class="nav-logo" href="../index.html">The Realms</a>
         <span class="nav-crumb">/ Trading</span>
         <a class="nav-link" href="index.html">Dashboard</a>
-        <a class="nav-link nav-link-active" href="challenges.html">Challenges</a>
-        <a class="nav-link" href="progress.html">Progress</a>
+        <a class="nav-link" href="challenges.html">Challenges</a>
+        <a class="nav-link nav-link-active" href="progress.html">Progress</a>
         <div class="nav-right">
             <span class="nav-status hidden" id="signedInIndicator">
                 <span class="status-dot"></span>
@@ -28,7 +28,7 @@
         </div>
     </nav>
 
-    <!-- ── Auth modal (same pattern as main site) ── -->
+    <!-- ── Auth modal ── -->
     <div class="overlay" id="authPopup" onclick="handleAuthOverlayClick(event)">
         <div class="qr-card auth-card">
             <button class="qr-close" onclick="toggleAuth()" aria-label="Close">&times;</button>
@@ -54,68 +54,96 @@
         </div>
     </div>
 
-    <!-- ── Create / Edit Challenge modal (shared) ── -->
-    <div class="overlay" id="formPopup" onclick="handleFormOverlayClick(event)">
+    <!-- ── Add / Edit entry modal ── -->
+    <div class="overlay" id="entryPopup" onclick="handleEntryOverlayClick(event)">
         <div class="qr-card auth-card">
-            <button class="qr-close" onclick="toggleForm()" aria-label="Close">&times;</button>
-            <p class="qr-title" style="margin-bottom:0;" id="formTitle">Start a Challenge</p>
+            <button class="qr-close" onclick="toggleEntry()" aria-label="Close">&times;</button>
+            <p class="qr-title" style="margin-bottom:0;" id="entryTitle">Log an Entry</p>
             <div class="field">
-                <label for="fName">Challenge name</label>
-                <input type="text" id="fName" placeholder="e.g. $100 → $1,000">
+                <label for="eDate">Date</label>
+                <input type="date" id="eDate">
             </div>
             <div class="field">
-                <label for="fBalance">Starting balance</label>
-                <input type="number" id="fBalance" placeholder="100" min="0" step="0.01">
+                <label for="eBalance">Balance</label>
+                <input type="number" id="eBalance" placeholder="0.00" min="0" step="0.01">
             </div>
             <div class="field">
-                <label for="fTarget">Daily target %</label>
-                <input type="number" id="fTarget" placeholder="2" min="0.01" step="0.01">
+                <label for="eNote">Note (optional)</label>
+                <input type="text" id="eNote" placeholder="What happened this day?">
             </div>
             <div class="field">
-                <label for="fDuration">Duration (days)</label>
-                <input type="number" id="fDuration" placeholder="30" min="1" step="1">
+                <label for="eScreenshot">Screenshot (optional)</label>
+                <input type="file" id="eScreenshot" accept="image/*">
+                <img id="eScreenshotPreview" class="screenshot-preview hidden" alt="Current screenshot">
             </div>
-            <p class="auth-error" id="formError"></p>
-            <button class="btn-primary" id="formSubmitBtn">Create Challenge</button>
+            <p class="auth-error" id="entryError"></p>
+            <button class="btn-primary" id="entrySubmitBtn">Save Entry</button>
+        </div>
+    </div>
+
+    <!-- ── Screenshot lightbox ── -->
+    <div class="overlay" id="lightbox" onclick="handleLightboxClick(event)">
+        <div class="lightbox-inner">
+            <button class="qr-close lightbox-close" onclick="toggleLightbox()" aria-label="Close">&times;</button>
+            <img id="lightboxImg" alt="Entry screenshot">
         </div>
     </div>
 
     <main class="dash-wrap">
 
         <section class="state-panel hidden" id="signedOutState">
-            <h1 class="state-title">Manage your challenges</h1>
-            <p class="state-sub">Sign in to create, edit, pause, or archive your growth challenges.</p>
+            <h1 class="state-title">Your daily progress</h1>
+            <p class="state-sub">Sign in to see your full entry history and log new days.</p>
             <button class="btn-primary" id="gateSignInBtn">Sign In</button>
         </section>
 
-        <section class="hidden" id="managedState">
+        <section class="state-panel hidden" id="noChallengeState">
+            <h1 class="state-title">No challenges yet</h1>
+            <p class="state-sub">Create a challenge first, then come back here to track daily progress.</p>
+            <a class="btn-primary" href="challenges.html" style="display:inline-block; text-decoration:none;">Go to Challenges</a>
+        </section>
+
+        <section class="hidden" id="progressState">
             <header class="dash-header">
                 <div>
-                    <p class="dash-eyebrow">Trading</p>
-                    <h1 class="dash-title">Challenges</h1>
+                    <p class="dash-eyebrow">Daily Progress</p>
+                    <h1 class="dash-title" id="progressChallengeName">—</h1>
                 </div>
                 <div class="dash-actions">
-                    <button class="btn-primary" id="newChallengeBtn">New Challenge</button>
+                    <select id="challengeSelect" class="challenge-select"></select>
+                    <button class="btn-primary" id="newEntryBtn">Log Entry</button>
                 </div>
             </header>
 
-            <div class="filter-row" id="filterRow">
-                <button class="filter-chip active" data-filter="all">All</button>
-                <button class="filter-chip" data-filter="active">Active</button>
-                <button class="filter-chip" data-filter="paused">Paused</button>
-                <button class="filter-chip" data-filter="completed">Completed</button>
-                <button class="filter-chip" data-filter="archived">Archived</button>
+            <div class="panel">
+                <p class="panel-title">Entry History</p>
+                <div class="entry-table-wrap">
+                    <table class="entry-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Balance</th>
+                                <th>P/L $</th>
+                                <th>P/L %</th>
+                                <th>Target</th>
+                                <th>vs Target</th>
+                                <th>Note</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="entryTableBody">
+                            <tr><td colspan="9" class="activity-empty">No entries yet — log your first day.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-
-            <ul class="challenge-list" id="challengeList">
-                <li class="activity-empty">No challenges yet — create one to get started.</li>
-            </ul>
         </section>
 
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="../js/auth.js"></script>
-    <script type="module" src="challenges.js"></script>
+    <script type="module" src="progress.js"></script>
 </body>
 </html>
