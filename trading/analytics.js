@@ -1,5 +1,10 @@
 import { supabaseClient } from '../js/auth.js';
+import {
+    fmtMoney, fmtPct, targetForDay, finalTarget, makeStateSwitcher,
+    fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
+} from './shared.js';
 
+const loadingState     = document.getElementById('loadingState');
 const signedOutState   = document.getElementById('signedOutState');
 const noChallengeState = document.getElementById('noChallengeState');
 const analyticsState   = document.getElementById('analyticsState');
@@ -22,43 +27,30 @@ let entries = [];
 gateSignInBtn.addEventListener('click', () => window.toggleAuth());
 
 /* ── View switching ── */
-function showState(name) {
-    signedOutState.classList.toggle('hidden', name !== 'out');
-    noChallengeState.classList.toggle('hidden', name !== 'no-challenge');
-    analyticsState.classList.toggle('hidden', name !== 'analytics');
-}
-
-/* ── Formatting ── */
-const fmtMoney = (n) => '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtPct   = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
-
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
+const showState = makeStateSwitcher({
+    loading: loadingState,
+    out: signedOutState,
+    'no-challenge': noChallengeState,
+    analytics: analyticsState
+});
 
 /* ── Load challenges, populate selector ── */
 async function loadChallenges() {
-    const { data, error } = await supabaseClient
-        .from('challenges')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) { console.error(error); return; }
-    challenges = data || [];
+    try {
+        challenges = await fetchUserChallenges(supabaseClient, currentUser.id);
+    } catch (error) {
+        console.error(error);
+        showState('no-challenge');
+        return;
+    }
 
     if (!challenges.length) {
         showState('no-challenge');
         return;
     }
 
-    challengeSelect.innerHTML = challenges.map(c =>
-        `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`
-    ).join('');
-
-    const preferred = challenges.find(c => c.status === 'active') || challenges[0];
+    populateChallengeSelect(challengeSelect, challenges);
+    const preferred = pickPreferredChallenge(challenges);
     challengeSelect.value = preferred.id;
     selectedChallenge = preferred;
 
@@ -89,27 +81,25 @@ async function loadEntries() {
 /* ── Stats ── */
 function renderStats() {
     const startingBalance = Number(selectedChallenge.starting_balance);
-    const rate = selectedChallenge.daily_target_percent / 100;
-    const finalTarget = startingBalance * Math.pow(1 + rate, selectedChallenge.duration_days);
+    const finalTargetVal = finalTarget(selectedChallenge);
     const currentBalance = entries.length ? Number(entries[entries.length - 1].balance) : startingBalance;
     const totalReturnPct = startingBalance ? ((currentBalance - startingBalance) / startingBalance) * 100 : 0;
 
     statTotalReturn.textContent = fmtPct(totalReturnPct);
     statTotalReturn.className = 'stat-value ' + (totalReturnPct >= 0 ? 'positive' : 'negative');
-    statFinalTarget.textContent = fmtMoney(finalTarget);
+    statFinalTarget.textContent = fmtMoney(finalTargetVal);
     statDaysLogged.textContent = `${entries.length} / ${selectedChallenge.duration_days}`;
 }
 
 /* ── Build the SVG equity curve ── */
 function buildChartSvg(challenge, entries) {
     const startingBalance = Number(challenge.starting_balance);
-    const rate = challenge.daily_target_percent / 100;
     const durationDays = Math.max(1, challenge.duration_days);
 
     // Target curve: one point per day from 0..durationDays
     const targetPoints = [];
     for (let d = 0; d <= durationDays; d++) {
-        targetPoints.push({ x: d, y: startingBalance * Math.pow(1 + rate, d) });
+        targetPoints.push({ x: d, y: targetForDay(challenge, d) });
     }
 
     // Actual curve: starting balance at day 0, then one point per logged entry in order

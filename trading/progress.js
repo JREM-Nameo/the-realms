@@ -1,5 +1,10 @@
 import { supabaseClient } from '../js/auth.js';
+import {
+    fmtMoney, fmtPct, todayStr, targetForDay, makeStateSwitcher, escapeHtml,
+    fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
+} from './shared.js';
 
+const loadingState     = document.getElementById('loadingState');
 const signedOutState   = document.getElementById('signedOutState');
 const noChallengeState = document.getElementById('noChallengeState');
 const progressState    = document.getElementById('progressState');
@@ -50,8 +55,6 @@ document.addEventListener('keydown', (e) => {
 
 gateSignInBtn.addEventListener('click', () => window.toggleAuth());
 
-function todayStr() { return new Date().toISOString().slice(0, 10); }
-
 function openEntryForm(mode, entry) {
     entryError.textContent = '';
     eScreenshot.value = '';
@@ -81,37 +84,30 @@ function openEntryForm(mode, entry) {
 newEntryBtn.addEventListener('click', () => openEntryForm('create'));
 
 /* ── View switching ── */
-function showState(name) {
-    signedOutState.classList.toggle('hidden', name !== 'out');
-    noChallengeState.classList.toggle('hidden', name !== 'no-challenge');
-    progressState.classList.toggle('hidden', name !== 'progress');
-}
-
-/* ── Formatting ── */
-const fmtMoney = (n) => '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtPct   = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+const showState = makeStateSwitcher({
+    loading: loadingState,
+    out: signedOutState,
+    'no-challenge': noChallengeState,
+    progress: progressState
+});
 
 /* ── Load challenges, populate selector ── */
 async function loadChallenges() {
-    const { data, error } = await supabaseClient
-        .from('challenges')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) { console.error(error); return; }
-    challenges = data || [];
+    try {
+        challenges = await fetchUserChallenges(supabaseClient, currentUser.id);
+    } catch (error) {
+        console.error(error);
+        showState('no-challenge');
+        return;
+    }
 
     if (!challenges.length) {
         showState('no-challenge');
         return;
     }
 
-    challengeSelect.innerHTML = challenges.map(c =>
-        `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`
-    ).join('');
-
-    const preferred = challenges.find(c => c.status === 'active') || challenges[0];
+    populateChallengeSelect(challengeSelect, challenges);
+    const preferred = pickPreferredChallenge(challenges);
     challengeSelect.value = preferred.id;
     selectedChallenge = preferred;
 
@@ -139,12 +135,6 @@ async function loadEntries() {
     renderTable();
 }
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
 /* ── Render entry table ── */
 function renderTable() {
     if (!entries.length) {
@@ -152,7 +142,6 @@ function renderTable() {
         return;
     }
 
-    const rate = selectedChallenge.daily_target_percent / 100;
     const startingBalance = Number(selectedChallenge.starting_balance);
 
     const rows = entries.map((e, i) => {
@@ -160,7 +149,7 @@ function renderTable() {
         const balance = Number(e.balance);
         const plDollar = balance - prevBalance;
         const plPct = prevBalance ? (plDollar / prevBalance) * 100 : 0;
-        const target = startingBalance * Math.pow(1 + rate, i + 1);
+        const target = targetForDay(selectedChallenge, i + 1);
         const gap = balance - target;
 
         const thumb = e.screenshot_url
@@ -225,49 +214,66 @@ entrySubmitBtn.addEventListener('click', async () => {
         return;
     }
 
+    // Guard against silently overwriting an existing entry when creating a new one:
+    // upsert-on-date would otherwise clobber it without warning.
+    if (!editingEntryId) {
+        const existing = entries.find(en => en.entry_date === date);
+        if (existing) {
+            const ok = window.confirm(
+                `An entry already exists for ${date} (balance ${fmtMoney(existing.balance)}). Overwrite it?`
+            );
+            if (!ok) return;
+            editingEntryId = existing.id; // proceed as an edit of the existing row instead
+        }
+    }
+
     entrySubmitBtn.disabled = true;
+    let uploadedPath = null; // tracked so we can clean up if the DB save fails after a successful upload
     try {
-        const { data: saved, error: saveErr } = editingEntryId
-            ? await supabaseClient
-                .from('daily_entries')
-                .update({ entry_date: date, balance, note })
-                .eq('id', editingEntryId)
-                .select()
-                .single()
-            : await supabaseClient
-                .from('daily_entries')
-                .upsert({
-                    challenge_id: selectedChallenge.id,
-                    entry_date: date,
-                    balance,
-                    note
-                }, { onConflict: 'challenge_id,entry_date' })
-                .select()
-                .single();
-
-        if (saveErr) { entryError.textContent = saveErr.message; return; }
-
+        let screenshotUrl; // left undefined = don't touch screenshot_url on this save
         if (file) {
             const ext = file.name.split('.').pop();
-            const path = `${currentUser.id}/${selectedChallenge.id}/${saved.entry_date}-${Date.now()}.${ext}`;
+            const path = `${currentUser.id}/${selectedChallenge.id}/${date}-${Date.now()}.${ext}`;
             const { error: uploadErr } = await supabaseClient.storage
                 .from('daily-screenshots')
                 .upload(path, file, { upsert: true });
 
-            if (uploadErr) { entryError.textContent = `Saved, but screenshot upload failed: ${uploadErr.message}`; }
-            else {
-                const { data: pub } = supabaseClient.storage.from('daily-screenshots').getPublicUrl(path);
-                await supabaseClient
-                    .from('daily_entries')
-                    .update({ screenshot_url: pub.publicUrl })
-                    .eq('id', saved.id);
+            if (uploadErr) {
+                entryError.textContent = `Screenshot upload failed: ${uploadErr.message}`;
+                return;
             }
+            uploadedPath = path;
+            const { data: pub } = supabaseClient.storage.from('daily-screenshots').getPublicUrl(path);
+            screenshotUrl = pub.publicUrl;
+        }
+
+        const payload = { entry_date: date, balance, note };
+        if (screenshotUrl) payload.screenshot_url = screenshotUrl;
+
+        const { error: saveErr } = editingEntryId
+            ? await supabaseClient
+                .from('daily_entries')
+                .update(payload)
+                .eq('id', editingEntryId)
+            : await supabaseClient
+                .from('daily_entries')
+                .upsert({ challenge_id: selectedChallenge.id, ...payload }, { onConflict: 'challenge_id,entry_date' });
+
+        if (saveErr) {
+            entryError.textContent = saveErr.message;
+            if (uploadedPath) {
+                await supabaseClient.storage.from('daily-screenshots').remove([uploadedPath]);
+            }
+            return;
         }
 
         window.toggleEntry();
         await loadEntries();
     } catch (err) {
         entryError.textContent = 'Something went wrong. Please try again.';
+        if (uploadedPath) {
+            await supabaseClient.storage.from('daily-screenshots').remove([uploadedPath]).catch(() => {});
+        }
     } finally {
         entrySubmitBtn.disabled = false;
     }

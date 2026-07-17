@@ -1,6 +1,8 @@
 import { supabaseClient } from '../js/auth.js';
+import { fmtMoney, fmtPct, daysBetween, todayStr, pad2, targetForDay, finalTarget, makeStateSwitcher } from './shared.js';
 
 /* ── Element refs ── */
+const loadingState    = document.getElementById('loadingState');
 const signedOutState  = document.getElementById('signedOutState');
 const emptyState      = document.getElementById('emptyState');
 const dashboardState  = document.getElementById('dashboardState');
@@ -41,8 +43,9 @@ function makeToggle(popup, onOpen) {
 window.toggleCreate = makeToggle(createPopup, () => { createError.textContent = ''; });
 window.toggleLog    = makeToggle(logPopup, () => {
     logError.textContent = '';
-    lBalance.value = '';
-    lNote.value = '';
+    const existing = currentEntries.find(e => e.entry_date === todayStr());
+    lBalance.value = existing ? existing.balance : '';
+    lNote.value = existing ? (existing.note || '') : '';
 });
 window.handleCreateOverlayClick = (e) => { if (e.target === e.currentTarget) window.toggleCreate(); };
 window.handleLogOverlayClick    = (e) => { if (e.target === e.currentTarget) window.toggleLog(); };
@@ -58,31 +61,18 @@ emptyCreateBtn.addEventListener('click', () => window.toggleCreate());
 logBtn.addEventListener('click', () => window.toggleLog());
 
 /* ── View switching ── */
-function showState(name) {
-    signedOutState.classList.toggle('hidden', name !== 'out');
-    emptyState.classList.toggle('hidden', name !== 'empty');
-    dashboardState.classList.toggle('hidden', name !== 'dashboard');
-}
-
-/* ── Formatting helpers ── */
-const fmtMoney = (n) => '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtPct   = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
-
-function daysBetween(a, b) {
-    const MS = 24 * 60 * 60 * 1000;
-    const da = new Date(a + 'T00:00:00');
-    const db = new Date(b + 'T00:00:00');
-    return Math.round((db - da) / MS);
-}
-function todayStr() {
-    return new Date().toISOString().slice(0, 10);
-}
-const pad2 = (n) => String(n).padStart(2, '0');
+const showState = makeStateSwitcher({
+    loading: loadingState,
+    out: signedOutState,
+    empty: emptyState,
+    dashboard: dashboardState
+});
 
 /* ── Core calculations ── */
 function computeDashboard(challenge, entries) {
-    const rate = challenge.daily_target_percent / 100;
     const dayNumber = entries.length; // entries already logged (day 0 = start)
+    // dayNumber + 1 is the target index for the *next* entry (0-based index
+    // entries.length === dayNumber, and targetForDay is 1-based).
     const startingBalance = Number(challenge.starting_balance);
     const currentBalance = entries.length
         ? Number(entries[entries.length - 1].balance)
@@ -91,11 +81,11 @@ function computeDashboard(challenge, entries) {
         ? Number(entries[entries.length - 2].balance)
         : startingBalance;
 
-    const todaysTarget = startingBalance * Math.pow(1 + rate, dayNumber + 1);
-    const finalTarget   = startingBalance * Math.pow(1 + rate, challenge.duration_days);
+    const todaysTarget = targetForDay(challenge, dayNumber + 1);
+    const finalTargetVal = finalTarget(challenge);
 
-    const progressPct = finalTarget > startingBalance
-        ? Math.min(100, Math.max(0, ((currentBalance - startingBalance) / (finalTarget - startingBalance)) * 100))
+    const progressPct = finalTargetVal > startingBalance
+        ? Math.min(100, Math.max(0, ((currentBalance - startingBalance) / (finalTargetVal - startingBalance)) * 100))
         : 0;
 
     // Streak: consecutive calendar days counting back from the most recent entry
@@ -115,7 +105,7 @@ function computeDashboard(challenge, entries) {
     const targetGap = currentBalance - todaysTarget;
 
     return {
-        currentBalance, todaysTarget, finalTarget, progressPct,
+        currentBalance, todaysTarget, finalTarget: finalTargetVal, progressPct,
         streak, daysCompleted, daysRemaining, balanceDelta, balanceDeltaPct, targetGap
     };
 }
@@ -123,12 +113,11 @@ function computeDashboard(challenge, entries) {
 /* ── Mini equity chart (compact version of the Analytics chart) ── */
 function buildMiniChartSvg(challenge, entries) {
     const startingBalance = Number(challenge.starting_balance);
-    const rate = challenge.daily_target_percent / 100;
     const durationDays = Math.max(1, challenge.duration_days);
 
     const targetPoints = [];
     for (let d = 0; d <= durationDays; d++) {
-        targetPoints.push({ x: d, y: startingBalance * Math.pow(1 + rate, d) });
+        targetPoints.push({ x: d, y: targetForDay(challenge, d) });
     }
     const actualPoints = [{ x: 0, y: startingBalance }];
     entries.forEach((e, i) => actualPoints.push({ x: i + 1, y: Number(e.balance) }));
@@ -158,12 +147,9 @@ function buildMiniChartSvg(challenge, entries) {
 
 /* ── Mini 14-day calendar strip ── */
 function buildMiniCalStrip(entries) {
-    const startingBalance = Number(currentChallenge.starting_balance);
-    const rate = currentChallenge.daily_target_percent / 100;
-
     const entryByDate = new Map();
     entries.forEach((e, i) => {
-        const target = startingBalance * Math.pow(1 + rate, i + 1);
+        const target = targetForDay(currentChallenge, i + 1);
         entryByDate.set(e.entry_date, Number(e.balance) >= target);
     });
 
@@ -256,7 +242,7 @@ async function loadDashboard() {
         .order('created_at', { ascending: false })
         .limit(1);
 
-    if (chErr) { console.error(chErr); return; }
+    if (chErr) { console.error(chErr); showState('empty'); return; }
 
     if (!challenges || !challenges.length) {
         currentChallenge = null;
@@ -272,7 +258,7 @@ async function loadDashboard() {
         .eq('challenge_id', currentChallenge.id)
         .order('entry_date', { ascending: true });
 
-    if (enErr) { console.error(enErr); return; }
+    if (enErr) { console.error(enErr); showState('empty'); return; }
     currentEntries = entries || [];
 
     render();
@@ -327,6 +313,15 @@ logSubmitBtn.addEventListener('click', async () => {
     if (!(balance >= 0)) {
         logError.textContent = 'Enter a valid balance.';
         return;
+    }
+
+    // Guard against silently overwriting an already-logged entry for today.
+    const existing = currentEntries.find(e => e.entry_date === todayStr());
+    if (existing) {
+        const ok = window.confirm(
+            `You already logged ${fmtMoney(existing.balance)} today. Overwrite it?`
+        );
+        if (!ok) return;
     }
 
     logSubmitBtn.disabled = true;
