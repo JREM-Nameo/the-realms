@@ -1,5 +1,7 @@
 import { supabaseClient } from '../js/auth.js';
+import { fmtMoney, finalTarget, escapeHtml, todayStr, makeStateSwitcher, fetchUserChallenges } from './shared.js';
 
+const loadingState   = document.getElementById('loadingState');
 const signedOutState = document.getElementById('signedOutState');
 const managedState    = document.getElementById('managedState');
 const gateSignInBtn   = document.getElementById('gateSignInBtn');
@@ -68,13 +70,11 @@ filterRow.addEventListener('click', (e) => {
 });
 
 /* ── View switching ── */
-function showState(name) {
-    signedOutState.classList.toggle('hidden', name !== 'out');
-    managedState.classList.toggle('hidden', name !== 'managed');
-}
-
-/* ── Formatting ── */
-const fmtMoney = (n) => '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const showState = makeStateSwitcher({
+    loading: loadingState,
+    out: signedOutState,
+    managed: managedState
+});
 
 /* ── Render ── */
 function renderList() {
@@ -88,7 +88,7 @@ function renderList() {
     }
 
     challengeList.innerHTML = filtered.map(c => {
-        const finalTarget = Number(c.starting_balance) * Math.pow(1 + c.daily_target_percent / 100, c.duration_days);
+        const finalTargetVal = finalTarget(c);
         const actions = [];
 
         if (c.status === 'active') {
@@ -112,7 +112,7 @@ function renderList() {
                     <span class="status-badge ${c.status}">${c.status}</span>
                 </div>
                 <div class="challenge-meta">
-                    <span>${fmtMoney(c.starting_balance)} → ${fmtMoney(finalTarget)}</span>
+                    <span>${fmtMoney(c.starting_balance)} → ${fmtMoney(finalTargetVal)}</span>
                     <span>${c.daily_target_percent}%/day</span>
                     <span>${c.duration_days} days</span>
                     <span>Started ${c.start_date}</span>
@@ -123,22 +123,17 @@ function renderList() {
     }).join('');
 }
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
 /* ── Load ── */
 async function loadChallenges() {
-    const { data, error } = await supabaseClient
-        .from('challenges')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) { console.error(error); return; }
-    challenges = data || [];
+    try {
+        challenges = await fetchUserChallenges(supabaseClient, currentUser.id);
+    } catch (error) {
+        console.error(error);
+        // Surface the failure instead of leaving the loading spinner stuck forever.
+        showState('managed');
+        challengeList.innerHTML = `<li class="activity-empty">Couldn't load your challenges. Please refresh and try again.</li>`;
+        return;
+    }
     renderList();
     showState('managed');
 }
@@ -178,7 +173,7 @@ formSubmitBtn.addEventListener('click', async () => {
                     starting_balance: balance,
                     daily_target_percent: target,
                     duration_days: duration,
-                    start_date: new Date().toISOString().slice(0, 10),
+                    start_date: todayStr(),
                     status: 'active'
                 });
             if (error) { formError.textContent = error.message; return; }
@@ -222,7 +217,7 @@ challengeList.addEventListener('click', async (e) => {
             starting_balance: challenge.starting_balance,
             daily_target_percent: challenge.daily_target_percent,
             duration_days: challenge.duration_days,
-            start_date: new Date().toISOString().slice(0, 10),
+            start_date: todayStr(),
             status: 'active'
         });
         if (error) { alert(error.message); return; }

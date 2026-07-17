@@ -1,5 +1,10 @@
 import { supabaseClient } from '../js/auth.js';
+import {
+    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDay, addDays,
+    makeStateSwitcher, fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
+} from './shared.js';
 
+const loadingState     = document.getElementById('loadingState');
 const signedOutState   = document.getElementById('signedOutState');
 const noChallengeState = document.getElementById('noChallengeState');
 const calendarState    = document.getElementById('calendarState');
@@ -26,45 +31,30 @@ let viewYear, viewMonth; // 0-indexed month
 gateSignInBtn.addEventListener('click', () => window.toggleAuth());
 
 /* ── View switching ── */
-function showState(name) {
-    signedOutState.classList.toggle('hidden', name !== 'out');
-    noChallengeState.classList.toggle('hidden', name !== 'no-challenge');
-    calendarState.classList.toggle('hidden', name !== 'calendar');
-}
-
-/* ── Formatting ── */
-const fmtMoney = (n) => '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtPct   = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
-const pad2 = (n) => String(n).padStart(2, '0');
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
+const showState = makeStateSwitcher({
+    loading: loadingState,
+    out: signedOutState,
+    'no-challenge': noChallengeState,
+    calendar: calendarState
+});
 
 /* ── Load challenges, populate selector ── */
 async function loadChallenges() {
-    const { data, error } = await supabaseClient
-        .from('challenges')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) { console.error(error); return; }
-    challenges = data || [];
+    try {
+        challenges = await fetchUserChallenges(supabaseClient, currentUser.id);
+    } catch (error) {
+        console.error(error);
+        showState('no-challenge');
+        return;
+    }
 
     if (!challenges.length) {
         showState('no-challenge');
         return;
     }
 
-    challengeSelect.innerHTML = challenges.map(c =>
-        `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`
-    ).join('');
-
-    const preferred = challenges.find(c => c.status === 'active') || challenges[0];
+    populateChallengeSelect(challengeSelect, challenges);
+    const preferred = pickPreferredChallenge(challenges);
     challengeSelect.value = preferred.id;
     selectedChallenge = preferred;
 
@@ -107,12 +97,11 @@ async function loadEntries() {
 function buildEntryMap() {
     entryByDate = new Map();
     const startingBalance = Number(selectedChallenge.starting_balance);
-    const rate = selectedChallenge.daily_target_percent / 100;
 
     entries.forEach((e, i) => {
         const prevBalance = i > 0 ? Number(entries[i - 1].balance) : startingBalance;
         const balance = Number(e.balance);
-        const target = startingBalance * Math.pow(1 + rate, i + 1);
+        const target = targetForDay(selectedChallenge, i + 1);
         const plDollar = balance - prevBalance;
         const plPct = prevBalance ? (plDollar / prevBalance) * 100 : 0;
         entryByDate.set(e.entry_date, {
@@ -182,12 +171,6 @@ function renderCalendar() {
     }
 
     calendarGrid.innerHTML = html;
-}
-
-function addDays(dateStr, days) {
-    const d = new Date(dateStr + 'T00:00:00');
-    d.setDate(d.getDate() + days);
-    return d.toISOString().slice(0, 10);
 }
 
 /* ── Click a day → popover ── */
