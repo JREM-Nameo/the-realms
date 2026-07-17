@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics · Trading — The Realms</title>
+    <title>Calendar · Trading — The Realms</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -18,8 +18,8 @@
         <a class="nav-link" href="index.html">Dashboard</a>
         <a class="nav-link" href="challenges.html">Challenges</a>
         <a class="nav-link" href="progress.html">Progress</a>
-        <a class="nav-link nav-link-active" href="analytics.html">Analytics</a>
-        <a class="nav-link" href="calendar.html">Calendar</a>
+        <a class="nav-link" href="analytics.html">Analytics</a>
+        <a class="nav-link nav-link-active" href="calendar.html">Calendar</a>
         <div class="nav-right">
             <span class="nav-status hidden" id="signedInIndicator">
                 <span class="status-dot"></span>
@@ -56,56 +56,55 @@
         </div>
     </div>
 
+    <!-- ── Day detail popover ── -->
+    <div class="day-popover hidden" id="dayPopover">
+        <p class="day-popover-date" id="popDate">—</p>
+        <div class="day-popover-body" id="popBody"></div>
+    </div>
+
     <main class="dash-wrap">
 
         <section class="state-panel hidden" id="signedOutState">
-            <h1 class="state-title">Your growth, charted</h1>
-            <p class="state-sub">Sign in to see your equity curve against your daily targets.</p>
+            <h1 class="state-title">Your trading calendar</h1>
+            <p class="state-sub">Sign in to see which days you hit target, missed, or skipped.</p>
             <button class="btn-primary" id="gateSignInBtn">Sign In</button>
         </section>
 
         <section class="state-panel hidden" id="noChallengeState">
             <h1 class="state-title">No challenges yet</h1>
-            <p class="state-sub">Create a challenge first, then come back here to see how it's tracking.</p>
+            <p class="state-sub">Create a challenge first, then come back here to see your daily consistency.</p>
             <a class="btn-primary" href="challenges.html" style="display:inline-block; text-decoration:none;">Go to Challenges</a>
         </section>
 
-        <section class="hidden" id="analyticsState">
+        <section class="hidden" id="calendarState">
             <header class="dash-header">
                 <div>
-                    <p class="dash-eyebrow">Analytics</p>
-                    <h1 class="dash-title" id="analyticsChallengeName">—</h1>
+                    <p class="dash-eyebrow">Calendar</p>
+                    <h1 class="dash-title" id="calendarChallengeName">—</h1>
                 </div>
                 <div class="dash-actions">
                     <select id="challengeSelect" class="challenge-select"></select>
                 </div>
             </header>
 
-            <div class="chart-stats-row" id="chartStatsRow">
-                <div class="chart-stat">
-                    <p class="stat-label">Total Return</p>
-                    <p class="stat-value" id="statTotalReturn">—</p>
-                </div>
-                <div class="chart-stat">
-                    <p class="stat-label">Final Target</p>
-                    <p class="stat-value" id="statFinalTarget">—</p>
-                </div>
-                <div class="chart-stat">
-                    <p class="stat-label">Days Logged</p>
-                    <p class="stat-value" id="statDaysLogged">—</p>
-                </div>
-            </div>
-
-            <div class="panel chart-card">
-                <div class="chart-card-head">
-                    <p class="panel-title">Equity Curve vs. Target</p>
+            <div class="panel calendar-card">
+                <div class="calendar-toolbar">
+                    <div class="month-nav">
+                        <button class="chip-btn" id="prevMonthBtn" aria-label="Previous month">‹</button>
+                        <p class="month-label" id="monthLabel">—</p>
+                        <button class="chip-btn" id="nextMonthBtn" aria-label="Next month">›</button>
+                    </div>
                     <div class="chart-legend">
-                        <span class="legend-item"><span class="legend-dot legend-dot-actual"></span>Actual</span>
-                        <span class="legend-item"><span class="legend-dot legend-dot-target"></span>Target</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot-hit"></span>Hit target</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot-miss"></span>Missed target</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot-none"></span>No entry</span>
                     </div>
                 </div>
-                <div id="chartContainer"></div>
-                <p class="activity-empty hidden" id="noEntriesMsg">No entries logged yet for this challenge — log a few days on the Progress page to see your curve here.</p>
+
+                <div class="calendar-weekdays">
+                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
             </div>
         </section>
 
@@ -113,6 +112,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="../js/auth.js"></script>
-    <script type="module" src="analytics.js"></script>
+    <script type="module" src="calendar.js"></script>
 </body>
 </html>
