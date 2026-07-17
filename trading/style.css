@@ -435,3 +435,225 @@ html, body.trading-body {
     stroke: var(--surface);
     stroke-width: 1.5;
 }
+
+/* ── Calendar ── */
+.calendar-card { padding: 20px 22px 24px; }
+
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.month-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.month-nav .chip-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+.month-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    min-width: 140px;
+    text-align: center;
+}
+
+.legend-dot-hit  { background: #34D399; }
+.legend-dot-miss { background: #F87171; }
+.legend-dot-none {
+    background: transparent;
+    border: 1.5px solid var(--border);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.calendar-weekdays span {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    padding-bottom: 4px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.cal-cell {
+    aspect-ratio: 1 / 1;
+    min-height: 64px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    transition: border-color 0.15s, background 0.15s;
+}
+.cal-cell:hover {
+    border-color: rgba(59,130,246,0.4);
+    background: var(--surface);
+}
+.cal-cell-pad {
+    background: transparent;
+    border: none;
+    cursor: default;
+}
+.cal-cell-pad:hover { background: transparent; }
+.cal-cell-outside {
+    opacity: 0.4;
+}
+
+.cal-daynum {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+.cal-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin: 2px 0;
+}
+.cal-dot-hit  { background: #34D399; }
+.cal-dot-miss { background: #F87171; }
+.cal-dot-none {
+    background: transparent;
+    border: 1.5px solid var(--border);
+}
+.cal-balance {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.cal-pl {
+    font-size: 10px;
+    line-height: 1.2;
+}
+.cal-pl.positive { color: #34D399; }
+.cal-pl.negative { color: #F87171; }
+
+@media (max-width: 640px) {
+    .cal-cell { min-height: 48px; padding: 4px 4px 6px; }
+    .cal-balance, .cal-pl { display: none; }
+}
+
+/* ── Day detail popover ── */
+.day-popover {
+    position: absolute;
+    z-index: 50;
+    width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.day-popover-date {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.day-pop-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 3px 0;
+}
+.day-pop-row span:last-child {
+    color: var(--text);
+    font-weight: 500;
+}
+.day-pop-row span.positive { color: #34D399 !important; }
+.day-pop-row span.negative { color: #F87171 !important; }
+.day-pop-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+/* ── Dashboard: mini panels (Equity Curve / Last 14 Days) ── */
+.panel-row-mini {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+@media (max-width: 720px) {
+    .panel-row-mini { grid-template-columns: 1fr; }
+}
+
+.mini-panel {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.mini-panel:hover {
+    border-color: rgba(59,130,246,0.4);
+    background: var(--surface2);
+}
+
+.panel-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.panel-title-row .panel-title { margin-bottom: 0; }
+.panel-link {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 500;
+}
+.mini-panel:hover .panel-link { color: var(--blue); }
+
+.mini-chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.mini-cal-strip {
+    display: flex;
+    justify-content: space-between;
+    gap: 3px;
+}
+.mini-cal-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+.mini-cal-daynum {
+    font-size: 9px;
+    color: var(--text-dim);
+}

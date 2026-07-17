@@ -8,6 +8,8 @@ const dashboardState  = document.getElementById('dashboardState');
 const gateSignInBtn   = document.getElementById('gateSignInBtn');
 const emptyCreateBtn  = document.getElementById('emptyCreateBtn');
 const logBtn          = document.getElementById('logBtn');
+const miniChartContainer = document.getElementById('miniChartContainer');
+const miniCalStrip       = document.getElementById('miniCalStrip');
 
 const createPopup     = document.getElementById('createPopup');
 const cName            = document.getElementById('cName');
@@ -75,6 +77,7 @@ function daysBetween(a, b) {
 function todayStr() {
     return new Date().toISOString().slice(0, 10);
 }
+const pad2 = (n) => String(n).padStart(2, '0');
 
 /* ── Core calculations ── */
 function computeDashboard(challenge, entries) {
@@ -115,6 +118,77 @@ function computeDashboard(challenge, entries) {
         currentBalance, todaysTarget, finalTarget, progressPct,
         streak, daysCompleted, daysRemaining, balanceDelta, balanceDeltaPct, targetGap
     };
+}
+
+/* ── Mini equity chart (compact version of the Analytics chart) ── */
+function buildMiniChartSvg(challenge, entries) {
+    const startingBalance = Number(challenge.starting_balance);
+    const rate = challenge.daily_target_percent / 100;
+    const durationDays = Math.max(1, challenge.duration_days);
+
+    const targetPoints = [];
+    for (let d = 0; d <= durationDays; d++) {
+        targetPoints.push({ x: d, y: startingBalance * Math.pow(1 + rate, d) });
+    }
+    const actualPoints = [{ x: 0, y: startingBalance }];
+    entries.forEach((e, i) => actualPoints.push({ x: i + 1, y: Number(e.balance) }));
+
+    const allY = [...targetPoints.map(p => p.y), ...actualPoints.map(p => p.y)];
+    const yMin = Math.min(...allY) * 0.97;
+    const yMax = Math.max(...allY) * 1.03;
+    const xMax = durationDays;
+
+    const W = 400, H = 120, margin = 6;
+    const chartW = W - margin * 2;
+    const chartH = H - margin * 2;
+    const sx = (x) => margin + (xMax > 0 ? (x / xMax) * chartW : 0);
+    const sy = (y) => margin + chartH - ((y - yMin) / (yMax - yMin || 1)) * chartH;
+
+    const targetPath = targetPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
+    const actualPath = actualPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
+    const last = actualPoints[actualPoints.length - 1];
+
+    return `
+    <svg viewBox="0 0 ${W} ${H}" class="mini-chart-svg" xmlns="http://www.w3.org/2000/svg">
+        <path d="${targetPath}" class="chart-line-target" fill="none" />
+        <path d="${actualPath}" class="chart-line-actual" fill="none" />
+        <circle cx="${sx(last.x).toFixed(1)}" cy="${sy(last.y).toFixed(1)}" r="3.5" class="chart-point" />
+    </svg>`;
+}
+
+/* ── Mini 14-day calendar strip ── */
+function buildMiniCalStrip(entries) {
+    const startingBalance = Number(currentChallenge.starting_balance);
+    const rate = currentChallenge.daily_target_percent / 100;
+
+    const entryByDate = new Map();
+    entries.forEach((e, i) => {
+        const target = startingBalance * Math.pow(1 + rate, i + 1);
+        entryByDate.set(e.entry_date, Number(e.balance) >= target);
+    });
+
+    const days = [];
+    const today = new Date();
+    for (let i = 13; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        days.push({ dateStr, dayNum: d.getDate() });
+    }
+
+    return days.map(({ dateStr, dayNum }) => {
+        let dotClass = 'cal-dot-none';
+        if (entryByDate.has(dateStr)) dotClass = entryByDate.get(dateStr) ? 'cal-dot-hit' : 'cal-dot-miss';
+        return `<span class="mini-cal-day">
+            <span class="cal-dot ${dotClass}"></span>
+            <span class="mini-cal-daynum">${dayNum}</span>
+        </span>`;
+    }).join('');
+}
+
+function renderMiniWidgets() {
+    miniChartContainer.innerHTML = buildMiniChartSvg(currentChallenge, currentEntries);
+    miniCalStrip.innerHTML = buildMiniCalStrip(currentEntries);
 }
 
 /* ── Render ── */
@@ -169,6 +243,7 @@ function render() {
     }
 
     showState('dashboard');
+    renderMiniWidgets();
 }
 
 /* ── Data loading ── */
