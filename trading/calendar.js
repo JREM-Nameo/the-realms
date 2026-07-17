@@ -1,6 +1,6 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDay, addDays,
+    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDate, addDays,
     makeStateSwitcher, fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
 } from './shared.js';
 
@@ -101,7 +101,7 @@ function buildEntryMap() {
     entries.forEach((e, i) => {
         const prevBalance = i > 0 ? Number(entries[i - 1].balance) : startingBalance;
         const balance = Number(e.balance);
-        const target = targetForDay(selectedChallenge, i + 1);
+        const target = targetForDate(selectedChallenge, e.entry_date);
         const plDollar = balance - prevBalance;
         const plPct = prevBalance ? (plDollar / prevBalance) * 100 : 0;
         entryByDate.set(e.entry_date, {

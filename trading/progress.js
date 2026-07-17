@@ -1,6 +1,6 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, todayStr, targetForDay, makeStateSwitcher, escapeHtml,
+    fmtMoney, fmtPct, todayStr, targetForDate, makeStateSwitcher, escapeHtml,
     fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
 } from './shared.js';
 
@@ -149,7 +149,7 @@ function renderTable() {
         const balance = Number(e.balance);
         const plDollar = balance - prevBalance;
         const plPct = prevBalance ? (plDollar / prevBalance) * 100 : 0;
-        const target = targetForDay(selectedChallenge, i + 1);
+        const target = targetForDate(selectedChallenge, e.entry_date);
         const gap = balance - target;
 
         const thumb = e.screenshot_url
