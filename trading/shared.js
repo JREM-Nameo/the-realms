@@ -38,9 +38,9 @@ export function escapeHtml(str) {
 /* ── Target-balance formula ──
    dayNumber is 1-based (dayNumber=1 → the first day's target).
    targetForDay(challenge, 0) === starting_balance.
-   NOTE: this currently compounds off *entry position*, not elapsed calendar
-   days, so skipped days aren't accounted for. Tracked as a follow-up fix —
-   changing it here will fix it everywhere at once. */
+   Pass an actual day-count. If you have a date instead of a day-count
+   (an entry's entry_date, or today), use targetForDate() below instead —
+   it converts the date to the right day-count relative to start_date. */
 export function targetForDay(challenge, dayNumber) {
     const rate = challenge.daily_target_percent / 100;
     return Number(challenge.starting_balance) * Math.pow(1 + rate, dayNumber);
@@ -48,6 +48,16 @@ export function targetForDay(challenge, dayNumber) {
 
 export function finalTarget(challenge) {
     return targetForDay(challenge, challenge.duration_days);
+}
+
+/* ── Target based on an actual calendar date rather than entry position ──
+   Use this whenever you have a real date (an entry's entry_date, or today).
+   start_date itself is day 1 (not day 0) — the first day's target applies
+   immediately, it doesn't wait for a full day to elapse. Correctly accounts
+   for skipped days too: a day with no entry still counts toward the
+   compounding, since the target tracks the calendar, not the log. */
+export function targetForDate(challenge, dateStr) {
+    return targetForDay(challenge, daysBetween(challenge.start_date, dateStr) + 1);
 }
 
 /* ── Generic state switcher ──

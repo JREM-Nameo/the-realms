@@ -1,5 +1,5 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, daysBetween, todayStr, pad2, targetForDay, finalTarget, makeStateSwitcher } from './shared.js';
+import { fmtMoney, fmtPct, daysBetween, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher } from './shared.js';
 
 /* ── Element refs ── */
 const loadingState    = document.getElementById('loadingState');
@@ -71,8 +71,6 @@ const showState = makeStateSwitcher({
 /* ── Core calculations ── */
 function computeDashboard(challenge, entries) {
     const dayNumber = entries.length; // entries already logged (day 0 = start)
-    // dayNumber + 1 is the target index for the *next* entry (0-based index
-    // entries.length === dayNumber, and targetForDay is 1-based).
     const startingBalance = Number(challenge.starting_balance);
     const currentBalance = entries.length
         ? Number(entries[entries.length - 1].balance)
@@ -81,7 +79,7 @@ function computeDashboard(challenge, entries) {
         ? Number(entries[entries.length - 2].balance)
         : startingBalance;
 
-    const todaysTarget = targetForDay(challenge, dayNumber + 1);
+    const todaysTarget = targetForDate(challenge, todayStr());
     const finalTargetVal = finalTarget(challenge);
 
     const progressPct = finalTargetVal > startingBalance
@@ -145,36 +143,55 @@ function buildMiniChartSvg(challenge, entries) {
     </svg>`;
 }
 
-/* ── Mini 14-day calendar strip ── */
-function buildMiniCalStrip(entries) {
+/* ── Mini monthly calendar (current month) ── */
+function buildMiniMonthCalendar(challenge, entries) {
     const entryByDate = new Map();
-    entries.forEach((e, i) => {
-        const target = targetForDay(currentChallenge, i + 1);
+    entries.forEach((e) => {
+        const target = targetForDate(challenge, e.entry_date);
         entryByDate.set(e.entry_date, Number(e.balance) >= target);
     });
 
-    const days = [];
     const today = new Date();
-    for (let i = 13; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const dateStr = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-        days.push({ dateStr, dayNum: d.getDate() });
-    }
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const todayDateStr = `${year}-${pad2(month + 1)}-${pad2(today.getDate())}`;
 
-    return days.map(({ dateStr, dayNum }) => {
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+
+    let cellsHtml = '';
+    for (let cell = 0; cell < totalCells; cell++) {
+        const dayNum = cell - firstWeekday + 1;
+
+        if (dayNum < 1 || dayNum > daysInMonth) {
+            cellsHtml += `<span class="mini-cal-cell mini-cal-cell-pad"></span>`;
+            continue;
+        }
+
+        const dateStr = `${year}-${pad2(month + 1)}-${pad2(dayNum)}`;
         let dotClass = 'cal-dot-none';
         if (entryByDate.has(dateStr)) dotClass = entryByDate.get(dateStr) ? 'cal-dot-hit' : 'cal-dot-miss';
-        return `<span class="mini-cal-day">
-            <span class="cal-dot ${dotClass}"></span>
-            <span class="mini-cal-daynum">${dayNum}</span>
-        </span>`;
-    }).join('');
+        const isToday = dateStr === todayDateStr;
+
+        cellsHtml += `
+            <span class="mini-cal-cell${isToday ? ' mini-cal-cell-today' : ''}">
+                <span class="mini-cal-daynum">${dayNum}</span>
+                <span class="cal-dot ${dotClass}"></span>
+            </span>`;
+    }
+
+    return `
+        <div class="mini-cal-weekdays">
+            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        </div>
+        <div class="mini-cal-days">${cellsHtml}</div>`;
 }
 
 function renderMiniWidgets() {
     miniChartContainer.innerHTML = buildMiniChartSvg(currentChallenge, currentEntries);
-    miniCalStrip.innerHTML = buildMiniCalStrip(currentEntries);
+    miniCalStrip.innerHTML = buildMiniMonthCalendar(currentChallenge, currentEntries);
+    document.getElementById('miniCalTitle').textContent = MONTH_NAMES[new Date().getMonth()];
 }
 
 /* ── Render ── */
