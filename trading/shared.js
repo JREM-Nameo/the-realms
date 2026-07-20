@@ -60,6 +60,41 @@ export function targetForDate(challenge, dateStr) {
     return targetForDay(challenge, daysBetween(challenge.start_date, dateStr) + 1);
 }
 
+/* ── Days completed, based on the calendar (not entry count) ──
+   A day counts as "completed" once it has passed, whether or not it was
+   logged — start_date itself is day 1. Capped at duration_days so a
+   long-finished challenge doesn't read as "45/30 days". */
+export function daysCompletedForChallenge(challenge) {
+    const today = todayStr();
+    if (today < challenge.start_date) return 0;
+    const elapsed = daysBetween(challenge.start_date, today) + 1;
+    return Math.min(elapsed, challenge.duration_days);
+}
+
+/* ── Streak, based on the calendar (not entry count) ──
+   Walks backward one calendar day at a time from today (or the challenge's
+   final day, if it has already ended) and counts consecutive days that were
+   both logged AND met that day's target. A skipped day breaks the streak
+   exactly like a logged-but-missed day does — it doesn't just freeze. */
+export function computeStreak(challenge, entries) {
+    const balanceByDate = new Map(entries.map(e => [e.entry_date, Number(e.balance)]));
+
+    const startDate = challenge.start_date;
+    const endDate = addDays(startDate, challenge.duration_days - 1);
+    const today = todayStr();
+    let cursor = today < endDate ? today : endDate;
+    if (cursor < startDate) return 0;
+
+    let streak = 0;
+    while (cursor >= startDate) {
+        const balance = balanceByDate.get(cursor);
+        if (balance === undefined || balance < targetForDate(challenge, cursor)) break;
+        streak++;
+        cursor = addDays(cursor, -1);
+    }
+    return streak;
+}
+
 /* ── Generic state switcher ──
    const showState = makeStateSwitcher({ loading: loadingEl, out: signedOutEl, ... });
    showState('out') hides every other element and shows signedOutEl. */

@@ -1,5 +1,5 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, daysBetween, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher } from './shared.js';
+import { fmtMoney, fmtPct, daysBetween, addDays, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, daysCompletedForChallenge, computeStreak, makeStateSwitcher } from './shared.js';
 
 /* ── Element refs ── */
 const loadingState    = document.getElementById('loadingState');
@@ -70,7 +70,6 @@ const showState = makeStateSwitcher({
 
 /* ── Core calculations ── */
 function computeDashboard(challenge, entries) {
-    const dayNumber = entries.length; // entries already logged (day 0 = start)
     const startingBalance = Number(challenge.starting_balance);
     const currentBalance = entries.length
         ? Number(entries[entries.length - 1].balance)
@@ -86,18 +85,12 @@ function computeDashboard(challenge, entries) {
         ? Math.min(100, Math.max(0, ((currentBalance - startingBalance) / (finalTargetVal - startingBalance)) * 100))
         : 0;
 
-    // Streak: consecutive calendar days counting back from the most recent entry
-    let streak = 0;
-    if (entries.length) {
-        streak = 1;
-        for (let i = entries.length - 1; i > 0; i--) {
-            const diff = daysBetween(entries[i - 1].entry_date, entries[i].entry_date);
-            if (diff === 1) streak++; else break;
-        }
-    }
+    // Streak: consecutive calendar days (not just logged ones) that met target.
+    // A skipped day breaks the streak the same as a missed one.
+    const streak = computeStreak(challenge, entries);
 
-    const daysCompleted = dayNumber;
-    const daysRemaining = Math.max(0, challenge.duration_days - dayNumber);
+    const daysCompleted = daysCompletedForChallenge(challenge);
+    const daysRemaining = Math.max(0, challenge.duration_days - daysCompleted);
     const balanceDelta = currentBalance - prevBalance;
     const balanceDeltaPct = prevBalance ? (balanceDelta / prevBalance) * 100 : 0;
     const targetGap = currentBalance - todaysTarget;
@@ -151,10 +144,14 @@ function buildMiniMonthCalendar(challenge, entries) {
         entryByDate.set(e.entry_date, Number(e.balance) >= target);
     });
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const todayDateStr = `${year}-${pad2(month + 1)}-${pad2(today.getDate())}`;
+    const startDate = challenge.start_date;
+    const endDate = addDays(startDate, challenge.duration_days - 1);
+    const today = todayStr();
+
+    const todayDate = new Date();
+    const year = todayDate.getFullYear();
+    const month = todayDate.getMonth();
+    const todayDateStr = `${year}-${pad2(month + 1)}-${pad2(todayDate.getDate())}`;
 
     const firstWeekday = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -170,8 +167,15 @@ function buildMiniMonthCalendar(challenge, entries) {
         }
 
         const dateStr = `${year}-${pad2(month + 1)}-${pad2(dayNum)}`;
+        const inChallenge = dateStr >= startDate && dateStr <= endDate;
+
         let dotClass = 'cal-dot-none';
-        if (entryByDate.has(dateStr)) dotClass = entryByDate.get(dateStr) ? 'cal-dot-hit' : 'cal-dot-miss';
+        if (entryByDate.has(dateStr)) {
+            dotClass = entryByDate.get(dateStr) ? 'cal-dot-hit' : 'cal-dot-miss';
+        } else if (inChallenge && dateStr <= today) {
+            // Day has come and gone with no entry logged — treat as missed, not just "no data".
+            dotClass = 'cal-dot-miss';
+        }
         const isToday = dateStr === todayDateStr;
 
         cellsHtml += `
