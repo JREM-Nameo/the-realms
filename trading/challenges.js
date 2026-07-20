@@ -1,5 +1,5 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, finalTarget, escapeHtml, todayStr, makeStateSwitcher, fetchUserChallenges } from './shared.js';
+import { fmtMoney, finalTarget, escapeHtml, todayStr, makeStateSwitcher, fetchUserChallenges, showConfirm } from './shared.js';
 
 const loadingState   = document.getElementById('loadingState');
 const signedOutState = document.getElementById('signedOutState');
@@ -202,7 +202,12 @@ challengeList.addEventListener('click', async (e) => {
     }
 
     if (action === 'delete') {
-        const ok = window.confirm(`Delete "${challenge.name}"? This also deletes all its logged entries. This cannot be undone.`);
+        const ok = await showConfirm({
+            title: 'Delete this challenge?',
+            message: `Deleting "${escapeHtml(challenge.name)}" will also permanently delete all of its logged entries. This cannot be undone.`,
+            confirmLabel: 'Delete Challenge',
+            danger: true
+        });
         if (!ok) return;
         const { error } = await supabaseClient.from('challenges').delete().eq('id', id);
         if (error) { alert(error.message); return; }

@@ -1,5 +1,5 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, daysBetween, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher } from './shared.js';
+import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, computeStreak, showConfirm } from './shared.js';
 
 /* ── Element refs ── */
 const loadingState    = document.getElementById('loadingState');
@@ -70,7 +70,6 @@ const showState = makeStateSwitcher({
 
 /* ── Core calculations ── */
 function computeDashboard(challenge, entries) {
-    const dayNumber = entries.length; // entries already logged (day 0 = start)
     const startingBalance = Number(challenge.starting_balance);
     const currentBalance = entries.length
         ? Number(entries[entries.length - 1].balance)
@@ -86,18 +85,12 @@ function computeDashboard(challenge, entries) {
         ? Math.min(100, Math.max(0, ((currentBalance - startingBalance) / (finalTargetVal - startingBalance)) * 100))
         : 0;
 
-    // Streak: consecutive calendar days counting back from the most recent entry
-    let streak = 0;
-    if (entries.length) {
-        streak = 1;
-        for (let i = entries.length - 1; i > 0; i--) {
-            const diff = daysBetween(entries[i - 1].entry_date, entries[i].entry_date);
-            if (diff === 1) streak++; else break;
-        }
-    }
-
-    const daysCompleted = dayNumber;
-    const daysRemaining = Math.max(0, challenge.duration_days - dayNumber);
+    // Streak and days completed/remaining are based on the actual calendar,
+    // via start_date — not on how many entries happen to exist. A skipped
+    // day still counts as elapsed and breaks the streak.
+    const streak = computeStreak(entries);
+    const daysCompleted = daysElapsed(challenge);
+    const daysRemaining = Math.max(0, challenge.duration_days - daysCompleted);
     const balanceDelta = currentBalance - prevBalance;
     const balanceDeltaPct = prevBalance ? (balanceDelta / prevBalance) * 100 : 0;
     const targetGap = currentBalance - todaysTarget;
@@ -146,10 +139,7 @@ function buildMiniChartSvg(challenge, entries) {
 /* ── Mini monthly calendar (current month) ── */
 function buildMiniMonthCalendar(challenge, entries) {
     const entryByDate = new Map();
-    entries.forEach((e) => {
-        const target = targetForDate(challenge, e.entry_date);
-        entryByDate.set(e.entry_date, Number(e.balance) >= target);
-    });
+    entries.forEach((e) => entryByDate.set(e.entry_date, e));
 
     const today = new Date();
     const year = today.getFullYear();
@@ -170,8 +160,10 @@ function buildMiniMonthCalendar(challenge, entries) {
         }
 
         const dateStr = `${year}-${pad2(month + 1)}-${pad2(dayNum)}`;
+        const status = dayStatus(challenge, dateStr, entryByDate.get(dateStr));
         let dotClass = 'cal-dot-none';
-        if (entryByDate.has(dateStr)) dotClass = entryByDate.get(dateStr) ? 'cal-dot-hit' : 'cal-dot-miss';
+        if (status === 'hit') dotClass = 'cal-dot-hit';
+        else if (status === 'miss' || status === 'missed') dotClass = 'cal-dot-miss';
         const isToday = dateStr === todayDateStr;
 
         cellsHtml += `
@@ -335,9 +327,11 @@ logSubmitBtn.addEventListener('click', async () => {
     // Guard against silently overwriting an already-logged entry for today.
     const existing = currentEntries.find(e => e.entry_date === todayStr());
     if (existing) {
-        const ok = window.confirm(
-            `You already logged ${fmtMoney(existing.balance)} today. Overwrite it?`
-        );
+        const ok = await showConfirm({
+            title: "Update today's entry?",
+            message: `You already logged ${fmtMoney(existing.balance)} today. This will replace it with ${fmtMoney(balance)}.`,
+            confirmLabel: 'Update Entry'
+        });
         if (!ok) return;
     }
 

@@ -1,6 +1,6 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, todayStr, targetForDate, makeStateSwitcher, escapeHtml,
+    fmtMoney, fmtPct, todayStr, targetForDate, makeStateSwitcher, escapeHtml, showConfirm,
     fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
 } from './shared.js';
 
@@ -193,7 +193,12 @@ entryTableBody.addEventListener('click', async (e) => {
 
     const deleteBtn = e.target.closest('[data-delete]');
     if (deleteBtn) {
-        const ok = window.confirm('Delete this entry? This cannot be undone.');
+        const ok = await showConfirm({
+            title: 'Delete this entry?',
+            message: 'This will permanently remove this logged day. This cannot be undone.',
+            confirmLabel: 'Delete Entry',
+            danger: true
+        });
         if (!ok) return;
         const { error } = await supabaseClient.from('daily_entries').delete().eq('id', deleteBtn.dataset.delete);
         if (error) { alert(error.message); return; }
@@ -219,9 +224,11 @@ entrySubmitBtn.addEventListener('click', async () => {
     if (!editingEntryId) {
         const existing = entries.find(en => en.entry_date === date);
         if (existing) {
-            const ok = window.confirm(
-                `An entry already exists for ${date} (balance ${fmtMoney(existing.balance)}). Overwrite it?`
-            );
+            const ok = await showConfirm({
+                title: 'Entry already exists',
+                message: `${date} already has a logged balance of ${fmtMoney(existing.balance)}. This will replace it with ${fmtMoney(balance)}.`,
+                confirmLabel: 'Replace Entry'
+            });
             if (!ok) return;
             editingEntryId = existing.id; // proceed as an edit of the existing row instead
         }

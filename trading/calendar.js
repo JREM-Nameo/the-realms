@@ -1,6 +1,6 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDate, addDays,
+    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDate, addDays, todayStr,
     makeStateSwitcher, fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
 } from './shared.js';
 
@@ -81,13 +81,10 @@ async function loadEntries() {
     entries = data || [];
     buildEntryMap();
 
-    // Default to the month of the most recent entry, else the challenge's start month, else today.
-    const anchorDate = entries.length
-        ? entries[entries.length - 1].entry_date
-        : selectedChallenge.start_date || new Date().toISOString().slice(0, 10);
-    const [y, m] = anchorDate.split('-').map(Number);
-    viewYear = y;
-    viewMonth = m - 1;
+    // Always default to the current month, matching the dashboard's mini calendar.
+    const today = new Date();
+    viewYear = today.getFullYear();
+    viewMonth = today.getMonth();
 
     closePopover();
     renderCalendar();
@@ -160,6 +157,9 @@ function renderCalendar() {
             extra = `
                 <span class="cal-balance">${fmtMoney(stats.balance)}</span>
                 <span class="cal-pl ${stats.plDollar >= 0 ? 'positive' : 'negative'}">${fmtPct(stats.plPct)}</span>`;
+        } else if (inRange && dateStr <= todayStr()) {
+            // Day has come and gone with no entry logged — treat as missed, not just "no data".
+            dotClass = 'cal-dot-miss';
         }
 
         html += `
@@ -191,8 +191,10 @@ calendarGrid.addEventListener('click', (e) => {
             <div class="day-pop-row"><span>vs Target</span><span class="${stats.hit ? 'positive' : 'negative'}">${stats.hit ? 'Hit' : 'Missed'}</span></div>
             ${stats.entry.note ? `<p class="day-pop-note">${escapeHtml(stats.entry.note)}</p>` : ''}
         `;
+    } else if (dateStr <= todayStr()) {
+        popBody.innerHTML = `<p class="day-pop-note negative">Missed — no entry logged for this day.</p>`;
     } else {
-        popBody.innerHTML = `<p class="day-pop-note">No entry logged for this day.</p>`;
+        popBody.innerHTML = `<p class="day-pop-note">This day hasn't happened yet.</p>`;
     }
 
     positionPopover(cell);
