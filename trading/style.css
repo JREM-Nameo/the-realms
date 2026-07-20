@@ -644,21 +644,23 @@ html, body.trading-body {
 .mini-cal-grid {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
+    max-width: 200px;
+    margin: 0 auto;
 }
 .mini-cal-weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
 }
 .mini-cal-weekdays span {
-    font-size: 9px;
+    font-size: 8px;
     color: var(--text-dim);
     text-align: center;
 }
 .mini-cal-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
+    gap: 2px;
 }
 .mini-cal-cell {
     aspect-ratio: 1 / 1;
@@ -666,8 +668,8 @@ html, body.trading-body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    border-radius: 5px;
+    gap: 2px;
+    border-radius: 4px;
     background: var(--surface2);
 }
 .mini-cal-cell-pad {
@@ -677,7 +679,7 @@ html, body.trading-body {
     background: var(--blue-dim);
 }
 .mini-cal-daynum {
-    font-size: 9px;
+    font-size: 8px;
     color: var(--text-dim);
 }
 

@@ -81,13 +81,10 @@ async function loadEntries() {
     entries = data || [];
     buildEntryMap();
 
-    // Default to the month of the most recent entry, else the challenge's start month, else today.
-    const anchorDate = entries.length
-        ? entries[entries.length - 1].entry_date
-        : selectedChallenge.start_date || new Date().toISOString().slice(0, 10);
-    const [y, m] = anchorDate.split('-').map(Number);
-    viewYear = y;
-    viewMonth = m - 1;
+    // Always default to the current month, matching the dashboard's mini calendar.
+    const today = new Date();
+    viewYear = today.getFullYear();
+    viewMonth = today.getMonth();
 
     closePopover();
     renderCalendar();
