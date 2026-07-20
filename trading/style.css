@@ -524,6 +524,9 @@ html, body.trading-body {
 .cal-cell-outside {
     opacity: 0.4;
 }
+.cal-cell-today {
+    border-color: var(--blue);
+}
 
 .cal-daynum {
     font-size: 12px;
@@ -596,6 +599,23 @@ html, body.trading-body {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid var(--border);
+}
+.day-pop-note.day-pop-missed {
+    color: #F87171;
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+.day-pop-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue);
+    text-decoration: none;
+}
+.day-pop-link:hover {
+    text-decoration: underline;
 }
 .day-pop-note.negative {
     color: #F87171;
@@ -695,6 +715,36 @@ html, body.trading-body {
 .mini-cal-daynum {
     font-size: 9px;
     color: var(--text-dim);
+}
+
+/* ── Confirm modal ── */
+.confirm-card {
+    text-align: left;
+}
+.confirm-title {
+    margin-bottom: 10px;
+}
+.confirm-message {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+.confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.confirm-actions .btn-primary,
+.confirm-actions .chip-btn {
+    padding: 9px 18px;
+}
+.confirm-danger {
+    background: #F87171;
+    border-color: #F87171;
+}
+.confirm-danger:hover {
+    background: #ef4444;
 }
 
 /* ── Shared loading state ── */

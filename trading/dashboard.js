@@ -1,5 +1,5 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, daysBetween, addDays, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, daysCompletedForChallenge, computeStreak, makeStateSwitcher } from './shared.js';
+import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, computeStreak, showConfirm } from './shared.js';
 
 /* ── Element refs ── */
 const loadingState    = document.getElementById('loadingState');
@@ -85,11 +85,11 @@ function computeDashboard(challenge, entries) {
         ? Math.min(100, Math.max(0, ((currentBalance - startingBalance) / (finalTargetVal - startingBalance)) * 100))
         : 0;
 
-    // Streak: consecutive calendar days (not just logged ones) that met target.
-    // A skipped day breaks the streak the same as a missed one.
-    const streak = computeStreak(challenge, entries);
-
-    const daysCompleted = daysCompletedForChallenge(challenge);
+    // Streak and days completed/remaining are based on the actual calendar,
+    // via start_date — not on how many entries happen to exist. A skipped
+    // day still counts as elapsed and breaks the streak.
+    const streak = computeStreak(entries);
+    const daysCompleted = daysElapsed(challenge);
     const daysRemaining = Math.max(0, challenge.duration_days - daysCompleted);
     const balanceDelta = currentBalance - prevBalance;
     const balanceDeltaPct = prevBalance ? (balanceDelta / prevBalance) * 100 : 0;
@@ -139,19 +139,12 @@ function buildMiniChartSvg(challenge, entries) {
 /* ── Mini monthly calendar (current month) ── */
 function buildMiniMonthCalendar(challenge, entries) {
     const entryByDate = new Map();
-    entries.forEach((e) => {
-        const target = targetForDate(challenge, e.entry_date);
-        entryByDate.set(e.entry_date, Number(e.balance) >= target);
-    });
+    entries.forEach((e) => entryByDate.set(e.entry_date, e));
 
-    const startDate = challenge.start_date;
-    const endDate = addDays(startDate, challenge.duration_days - 1);
-    const today = todayStr();
-
-    const todayDate = new Date();
-    const year = todayDate.getFullYear();
-    const month = todayDate.getMonth();
-    const todayDateStr = `${year}-${pad2(month + 1)}-${pad2(todayDate.getDate())}`;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const todayDateStr = `${year}-${pad2(month + 1)}-${pad2(today.getDate())}`;
 
     const firstWeekday = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -167,15 +160,10 @@ function buildMiniMonthCalendar(challenge, entries) {
         }
 
         const dateStr = `${year}-${pad2(month + 1)}-${pad2(dayNum)}`;
-        const inChallenge = dateStr >= startDate && dateStr <= endDate;
-
+        const status = dayStatus(challenge, dateStr, entryByDate.get(dateStr));
         let dotClass = 'cal-dot-none';
-        if (entryByDate.has(dateStr)) {
-            dotClass = entryByDate.get(dateStr) ? 'cal-dot-hit' : 'cal-dot-miss';
-        } else if (inChallenge && dateStr <= today) {
-            // Day has come and gone with no entry logged — treat as missed, not just "no data".
-            dotClass = 'cal-dot-miss';
-        }
+        if (status === 'hit') dotClass = 'cal-dot-hit';
+        else if (status === 'miss' || status === 'missed') dotClass = 'cal-dot-miss';
         const isToday = dateStr === todayDateStr;
 
         cellsHtml += `
@@ -339,9 +327,11 @@ logSubmitBtn.addEventListener('click', async () => {
     // Guard against silently overwriting an already-logged entry for today.
     const existing = currentEntries.find(e => e.entry_date === todayStr());
     if (existing) {
-        const ok = window.confirm(
-            `You already logged ${fmtMoney(existing.balance)} today. Overwrite it?`
-        );
+        const ok = await showConfirm({
+            title: "Update today's entry?",
+            message: `You already logged ${fmtMoney(existing.balance)} today. This will replace it with ${fmtMoney(balance)}.`,
+            confirmLabel: 'Update Entry'
+        });
         if (!ok) return;
     }
 

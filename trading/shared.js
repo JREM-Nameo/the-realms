@@ -60,39 +60,103 @@ export function targetForDate(challenge, dateStr) {
     return targetForDay(challenge, daysBetween(challenge.start_date, dateStr) + 1);
 }
 
-/* ── Days completed, based on the calendar (not entry count) ──
-   A day counts as "completed" once it has passed, whether or not it was
-   logged — start_date itself is day 1. Capped at duration_days so a
-   long-finished challenge doesn't read as "45/30 days". */
-export function daysCompletedForChallenge(challenge) {
-    const today = todayStr();
-    if (today < challenge.start_date) return 0;
-    const elapsed = daysBetween(challenge.start_date, today) + 1;
-    return Math.min(elapsed, challenge.duration_days);
+/* ── Challenge date range ──
+   start_date is day 1 of the challenge; the challenge covers duration_days
+   calendar days total, so the last day is start_date + (duration_days - 1). */
+export function challengeEndDate(challenge) {
+    return addDays(challenge.start_date, challenge.duration_days - 1);
 }
 
-/* ── Streak, based on the calendar (not entry count) ──
-   Walks backward one calendar day at a time from today (or the challenge's
-   final day, if it has already ended) and counts consecutive days that were
-   both logged AND met that day's target. A skipped day breaks the streak
-   exactly like a logged-but-missed day does — it doesn't just freeze. */
-export function computeStreak(challenge, entries) {
-    const balanceByDate = new Map(entries.map(e => [e.entry_date, Number(e.balance)]));
+/* ── How many calendar days of the challenge have actually elapsed ──
+   Based on today's real date vs start_date, not on how many entries were
+   logged. Clamped to [0, duration_days] so it never goes negative or past
+   the challenge length. */
+export function daysElapsed(challenge) {
+    const raw = daysBetween(challenge.start_date, todayStr()) + 1;
+    return Math.min(challenge.duration_days, Math.max(0, raw));
+}
 
-    const startDate = challenge.start_date;
-    const endDate = addDays(startDate, challenge.duration_days - 1);
+/* ── Classify a single calendar day for a challenge ──
+   entry: the daily_entries row for that date, or null/undefined if none.
+   Returns one of:
+     'hit'      - logged, balance met or beat that day's target
+     'miss'     - logged, balance came in under target
+     'missed'   - no entry, and the day has already passed (i.e. a skipped day)
+     'pending'  - no entry, but it's today (still time to log)
+     'upcoming' - no entry, day hasn't arrived yet
+     'outside'  - date falls outside the challenge's start–end range */
+export function dayStatus(challenge, dateStr, entry) {
+    const start = challenge.start_date;
+    const end = challengeEndDate(challenge);
+    if (dateStr < start || dateStr > end) return 'outside';
+
+    if (entry) {
+        const target = targetForDate(challenge, dateStr);
+        return Number(entry.balance) >= target ? 'hit' : 'miss';
+    }
+
     const today = todayStr();
-    let cursor = today < endDate ? today : endDate;
-    if (cursor < startDate) return 0;
+    if (dateStr < today) return 'missed';
+    if (dateStr === today) return 'pending';
+    return 'upcoming';
+}
+
+/* ── Current streak, based on consecutive calendar days ──
+   Counts backward from today (or from yesterday if today isn't logged yet,
+   giving a same-day grace period) as long as each day has a logged entry.
+   A skipped day breaks the streak immediately, unlike counting entries
+   alone which ignores gaps in the calendar. */
+export function computeStreak(entries) {
+    const loggedDates = new Set(entries.map(e => e.entry_date));
+    if (!loggedDates.size) return 0;
+
+    let cursor = todayStr();
+    if (!loggedDates.has(cursor)) cursor = addDays(cursor, -1);
 
     let streak = 0;
-    while (cursor >= startDate) {
-        const balance = balanceByDate.get(cursor);
-        if (balance === undefined || balance < targetForDate(challenge, cursor)) break;
+    while (loggedDates.has(cursor)) {
         streak++;
         cursor = addDays(cursor, -1);
     }
     return streak;
+}
+
+/* ── Styled confirm modal ──
+   Replaces window.confirm(), which pops up as a jarring native browser
+   dialog that doesn't match the rest of the UI. Usage mirrors confirm():
+   const ok = await showConfirm({ title, message, confirmLabel, cancelLabel, danger });
+   if (!ok) return; */
+export function showConfirm({ title = 'Are you sure?', message = '', confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = {}) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay confirm-overlay active';
+        overlay.innerHTML = `
+            <div class="qr-card confirm-card">
+                <p class="qr-title confirm-title">${title}</p>
+                <p class="confirm-message">${message}</p>
+                <div class="confirm-actions">
+                    <button type="button" class="chip-btn confirm-cancel">${cancelLabel}</button>
+                    <button type="button" class="btn-primary confirm-ok${danger ? ' confirm-danger' : ''}">${confirmLabel}</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        function cleanup(result) {
+            document.removeEventListener('keydown', onKey);
+            overlay.remove();
+            document.body.style.overflow = '';
+            resolve(result);
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') cleanup(false);
+        }
+
+        overlay.querySelector('.confirm-cancel').addEventListener('click', () => cleanup(false));
+        overlay.querySelector('.confirm-ok').addEventListener('click', () => cleanup(true));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+        document.addEventListener('keydown', onKey);
+    });
 }
 
 /* ── Generic state switcher ──
