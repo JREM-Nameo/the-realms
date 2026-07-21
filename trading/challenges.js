@@ -1,5 +1,7 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, finalTarget, escapeHtml, todayStr, makeStateSwitcher, fetchUserChallenges, showConfirm } from './shared.js';
+import { fmtMoney, finalTarget, escapeHtml, todayStr, makeStateSwitcher, fetchUserChallenges, showConfirm, initSidebarToggle } from './shared.js';
+
+initSidebarToggle();
 
 const loadingState   = document.getElementById('loadingState');
 const signedOutState = document.getElementById('signedOutState');

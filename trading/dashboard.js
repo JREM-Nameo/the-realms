@@ -1,5 +1,7 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, computeStreak, showConfirm } from './shared.js';
+import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, computeStreak, showConfirm, initSidebarToggle } from './shared.js';
+
+initSidebarToggle();
 
 /* ── Element refs ── */
 const loadingState    = document.getElementById('loadingState');
