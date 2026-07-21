@@ -1,8 +1,11 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDate, addDays, todayStr,
-    makeStateSwitcher, fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge
+    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDate, todayStr,
+    makeStateSwitcher, fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge,
+    dayStatus, challengeEndDate, initSidebarToggle
 } from './shared.js';
+
+initSidebarToggle();
 
 const loadingState     = document.getElementById('loadingState');
 const signedOutState   = document.getElementById('signedOutState');
@@ -135,7 +138,8 @@ function renderCalendar() {
     const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
 
     const startDate = selectedChallenge.start_date;
-    const endDate = addDays(startDate, selectedChallenge.duration_days);
+    const endDate = challengeEndDate(selectedChallenge);
+    const today = todayStr();
 
     let html = '';
     for (let cell = 0; cell < totalCells; cell++) {
@@ -149,21 +153,22 @@ function renderCalendar() {
         const dateStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(dayNum)}`;
         const inRange = dateStr >= startDate && dateStr <= endDate;
         const stats = entryByDate.get(dateStr);
+        const status = dayStatus(selectedChallenge, dateStr, stats ? stats.entry : null);
 
         let dotClass = 'cal-dot-none';
-        let extra = '';
-        if (stats) {
-            dotClass = stats.hit ? 'cal-dot-hit' : 'cal-dot-miss';
-            extra = `
+        if (status === 'hit') dotClass = 'cal-dot-hit';
+        else if (status === 'miss' || status === 'missed') dotClass = 'cal-dot-miss';
+
+        const extra = stats ? `
                 <span class="cal-balance">${fmtMoney(stats.balance)}</span>
-                <span class="cal-pl ${stats.plDollar >= 0 ? 'positive' : 'negative'}">${fmtPct(stats.plPct)}</span>`;
-        } else if (inRange && dateStr <= todayStr()) {
-            // Day has come and gone with no entry logged — treat as missed, not just "no data".
-            dotClass = 'cal-dot-miss';
-        }
+                <span class="cal-pl ${stats.plDollar >= 0 ? 'positive' : 'negative'}">${fmtPct(stats.plPct)}</span>` : '';
+
+        const cellClasses = ['cal-cell'];
+        if (!inRange) cellClasses.push('cal-cell-outside');
+        if (dateStr === today) cellClasses.push('cal-cell-today');
 
         html += `
-            <button type="button" class="cal-cell ${inRange ? '' : 'cal-cell-outside'}" data-date="${dateStr}">
+            <button type="button" class="${cellClasses.join(' ')}" data-date="${dateStr}">
                 <span class="cal-daynum">${dayNum}</span>
                 <span class="cal-dot ${dotClass}"></span>
                 ${extra}
@@ -179,11 +184,18 @@ calendarGrid.addEventListener('click', (e) => {
     if (!cell) return;
     const dateStr = cell.dataset.date;
     const stats = entryByDate.get(dateStr);
+    const status = dayStatus(selectedChallenge, dateStr, stats ? stats.entry : null);
 
     popDate.textContent = formatLongDate(dateStr);
+    popBody.innerHTML = buildPopoverBody(dateStr, stats, status);
 
+    positionPopover(cell);
+    dayPopover.classList.remove('hidden');
+});
+
+function buildPopoverBody(dateStr, stats, status) {
     if (stats) {
-        popBody.innerHTML = `
+        return `
             <div class="day-pop-row"><span>Balance</span><span>${fmtMoney(stats.balance)}</span></div>
             <div class="day-pop-row"><span>P/L $</span><span class="${stats.plDollar >= 0 ? 'positive' : 'negative'}">${stats.plDollar >= 0 ? '+' : ''}${fmtMoney(stats.plDollar)}</span></div>
             <div class="day-pop-row"><span>P/L %</span><span class="${stats.plDollar >= 0 ? 'positive' : 'negative'}">${fmtPct(stats.plPct)}</span></div>
@@ -191,15 +203,29 @@ calendarGrid.addEventListener('click', (e) => {
             <div class="day-pop-row"><span>vs Target</span><span class="${stats.hit ? 'positive' : 'negative'}">${stats.hit ? 'Hit' : 'Missed'}</span></div>
             ${stats.entry.note ? `<p class="day-pop-note">${escapeHtml(stats.entry.note)}</p>` : ''}
         `;
-    } else if (dateStr <= todayStr()) {
-        popBody.innerHTML = `<p class="day-pop-note negative">Missed — no entry logged for this day.</p>`;
-    } else {
-        popBody.innerHTML = `<p class="day-pop-note">This day hasn't happened yet.</p>`;
     }
 
-    positionPopover(cell);
-    dayPopover.classList.remove('hidden');
-});
+    const target = targetForDate(selectedChallenge, dateStr);
+
+    switch (status) {
+        case 'missed':
+            return `
+                <p class="day-pop-note day-pop-missed">No entry logged — this day was skipped.</p>
+                <div class="day-pop-row"><span>Target</span><span>${fmtMoney(target)}</span></div>
+                <a class="day-pop-link" href="progress.html">Log this day →</a>
+            `;
+        case 'pending':
+            return `
+                <p class="day-pop-note">Not logged yet — there's still time today.</p>
+                <div class="day-pop-row"><span>Target</span><span>${fmtMoney(target)}</span></div>
+                <a class="day-pop-link" href="progress.html">Log today →</a>
+            `;
+        case 'upcoming':
+            return `<p class="day-pop-note">This day hasn't arrived yet.</p>`;
+        default: // outside the challenge's start–end range
+            return `<p class="day-pop-note">Outside this challenge's date range.</p>`;
+    }
+}
 
 function formatLongDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');

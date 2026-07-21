@@ -159,6 +159,33 @@ export function showConfirm({ title = 'Are you sure?', message = '', confirmLabe
     });
 }
 
+/* ── Sidebar drawer toggle (mobile) ──
+   Call once per page after the DOM is ready. Wires up the hamburger button,
+   overlay click, Escape key, and auto-close on link tap. No-ops safely if
+   the page doesn't have the sidebar markup. */
+export function initSidebarToggle() {
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!toggleBtn || !sidebar || !overlay) return;
+
+    function open() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+    }
+    function close() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.contains('open') ? close() : open();
+    });
+    overlay.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    sidebar.querySelectorAll('.sidebar-link').forEach(link => link.addEventListener('click', close));
+}
+
 /* ── Generic state switcher ──
    const showState = makeStateSwitcher({ loading: loadingEl, out: signedOutEl, ... });
    showState('out') hides every other element and shows signedOutEl. */

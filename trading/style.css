@@ -24,8 +24,101 @@ html, body.trading-body {
     margin-left: 8px;
 }
 
+/* ── Sidebar hamburger toggle (hidden on desktop) ── */
+.sidebar-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 4px;
+}
+.sidebar-toggle span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+}
+
+/* ── Sidebar + main content row ── */
+.trading-layout {
+    display: flex;
+    align-items: flex-start;
+}
+
+.sidebar {
+    width: 190px;
+    flex-shrink: 0;
+    padding: 32px 12px;
+}
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.sidebar-link {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+.sidebar-link:hover {
+    background: var(--surface2);
+    color: var(--text);
+}
+.sidebar-link.nav-link-active {
+    background: var(--blue-dim);
+    color: var(--blue) !important;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+/* ── Mobile: sidebar becomes an off-canvas drawer ── */
+@media (max-width: 880px) {
+    .sidebar-toggle {
+        display: flex;
+    }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 240px;
+        height: 100vh;
+        z-index: 70;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 24px 16px;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .sidebar-overlay.active {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 65;
+    }
+}
+
 /* ── Layout ── */
 .dash-wrap {
+    flex: 1;
+    min-width: 0;
     max-width: 900px;
     margin: 0 auto;
     padding: 40px 24px 80px;

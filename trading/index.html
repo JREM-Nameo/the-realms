@@ -13,13 +13,11 @@
 <body class="trading-body">
 
     <nav class="nav">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
         <a class="nav-logo" href="../index.html">The Realms</a>
         <span class="nav-crumb">/ Trading</span>
-        <a class="nav-link nav-link-active" href="index.html">Dashboard</a>
-        <a class="nav-link" href="challenges.html">Challenges</a>
-        <a class="nav-link" href="progress.html">Progress</a>
-        <a class="nav-link" href="analytics.html">Analytics</a>
-        <a class="nav-link" href="calendar.html">Calendar</a>
         <div class="nav-right">
             <span class="nav-status hidden" id="signedInIndicator">
                 <span class="status-dot"></span>
@@ -99,6 +97,18 @@
             <button class="btn-primary" id="logSubmitBtn">Save Entry</button>
         </div>
     </div>
+
+    <div class="trading-layout">
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a class="sidebar-link nav-link-active" href="index.html">Dashboard</a>
+                <a class="sidebar-link" href="challenges.html">Challenges</a>
+                <a class="sidebar-link" href="progress.html">Progress</a>
+                <a class="sidebar-link" href="analytics.html">Analytics</a>
+                <a class="sidebar-link" href="calendar.html">Calendar</a>
+            </nav>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <main class="dash-wrap">
 
@@ -184,6 +194,7 @@
         </section>
 
     </main>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="../js/auth.js"></script>
