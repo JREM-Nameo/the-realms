@@ -810,6 +810,115 @@ html, body.trading-body {
     color: var(--text-dim);
 }
 
+/* ── Cap modal height so longer forms (e.g. the trade entry) scroll
+   internally instead of overflowing the viewport top/bottom ── */
+.overlay .qr-card {
+    max-height: 88vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+/* ── Create/Edit Challenge modal: name full-width, then the three
+   parallel numeric fields (balance/target/duration) as one row ── */
+.challenge-modal {
+    max-width: 460px;
+    width: 90vw;
+    box-sizing: border-box;
+    text-align: left;
+}
+.challenge-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    min-width: 0;
+}
+@media (max-width: 460px) {
+    .challenge-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Log Balance modal: quick single-purpose capture, so the balance
+   field itself is the visual focus rather than just another input ── */
+.log-modal {
+    text-align: left;
+}
+.log-modal #lBalance {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* ── Progress entry modal: date + balance are both short, single-line
+   values, so they share a row instead of stacking ── */
+.progress-entry-modal {
+    max-width: 420px;
+    width: 90vw;
+    box-sizing: border-box;
+    text-align: left;
+}
+.progress-entry-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    min-width: 0;
+}
+
+/* ── Journal: wider modal with a 3-column grid for the compact fields,
+   instead of forcing a 9-field form into the narrow single-column
+   layout built for the 4-field auth/create-challenge modals ── */
+.trade-modal {
+    max-width: 560px;
+    width: 92vw;
+    box-sizing: border-box;
+    text-align: left;
+}
+.trade-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 4px;
+    min-width: 0;
+}
+@media (max-width: 560px) {
+    .trade-form-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+}
+.trade-screenshot-field .screenshot-preview {
+    max-height: 100px;
+}
+.field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+}
+.field textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    resize: vertical;
+}
+.direction-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 9px;
+    border-radius: 999px;
+    text-transform: capitalize;
+}
+.direction-badge.long  { background: rgba(52,211,153,0.15); color: #34D399; }
+.direction-badge.short { background: rgba(248,113,113,0.15); color: #F87171; }
+
 /* ── Confirm modal ── */
 .confirm-card {
     text-align: left;

@@ -56,24 +56,26 @@
 
     <!-- ── Create Challenge modal ── -->
     <div class="overlay" id="createPopup" onclick="handleCreateOverlayClick(event)">
-        <div class="qr-card auth-card">
+        <div class="qr-card auth-card challenge-modal">
             <button class="qr-close" onclick="toggleCreate()" aria-label="Close">&times;</button>
-            <p class="qr-title" style="margin-bottom:0;">Start a Challenge</p>
+            <p class="qr-title" style="margin-bottom:16px;">Start a Challenge</p>
             <div class="field">
                 <label for="cName">Challenge name</label>
                 <input type="text" id="cName" placeholder="e.g. $100 → $1,000">
             </div>
-            <div class="field">
-                <label for="cBalance">Starting balance</label>
-                <input type="number" id="cBalance" placeholder="100" min="0" step="0.01">
-            </div>
-            <div class="field">
-                <label for="cTarget">Daily target %</label>
-                <input type="number" id="cTarget" placeholder="2" min="0.01" step="0.01">
-            </div>
-            <div class="field">
-                <label for="cDuration">Duration (days)</label>
-                <input type="number" id="cDuration" placeholder="30" min="1" step="1">
+            <div class="challenge-form-grid">
+                <div class="field">
+                    <label for="cBalance">Starting balance</label>
+                    <input type="number" id="cBalance" placeholder="100" min="0" step="0.01">
+                </div>
+                <div class="field">
+                    <label for="cTarget">Daily target %</label>
+                    <input type="number" id="cTarget" placeholder="2" min="0.01" step="0.01">
+                </div>
+                <div class="field">
+                    <label for="cDuration">Duration (days)</label>
+                    <input type="number" id="cDuration" placeholder="30" min="1" step="1">
+                </div>
             </div>
             <p class="auth-error" id="createError"></p>
             <button class="btn-primary" id="createSubmitBtn">Create Challenge</button>
@@ -82,9 +84,9 @@
 
     <!-- ── Log Balance modal ── -->
     <div class="overlay" id="logPopup" onclick="handleLogOverlayClick(event)">
-        <div class="qr-card auth-card">
+        <div class="qr-card auth-card log-modal">
             <button class="qr-close" onclick="toggleLog()" aria-label="Close">&times;</button>
-            <p class="qr-title" style="margin-bottom:0;">Log Today's Balance</p>
+            <p class="qr-title" style="margin-bottom:16px;">Log Today's Balance</p>
             <div class="field">
                 <label for="lBalance">Current balance</label>
                 <input type="number" id="lBalance" placeholder="0.00" min="0" step="0.01">
@@ -106,6 +108,7 @@
                 <a class="sidebar-link" href="progress.html">Progress</a>
                 <a class="sidebar-link" href="analytics.html">Analytics</a>
                 <a class="sidebar-link" href="calendar.html">Calendar</a>
+                <a class="sidebar-link" href="journal.html">Journal</a>
             </nav>
         </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
