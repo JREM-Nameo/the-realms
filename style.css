@@ -287,9 +287,11 @@ body {
 
 /* ── Title ── */
 .hero-text {
-    position: relative;
+    position: absolute;
+    top: clamp(20px, 5vw, 60px);
+    left: clamp(20px, 5vw, 60px);
     z-index: 2;
-    text-align: center;
+    text-align: left;
 }
 .hero-title {
     font-family: 'Space Grotesk', sans-serif;
@@ -303,6 +305,18 @@ body {
 .hero-sub {
     font-size: 14px;
     color: var(--text-dim);
+}
+
+/* ── Card grid (left side, mirrors project-showcase on the right) ── */
+.card-grid {
+    position: absolute;
+    left: clamp(20px, 8vw, 120px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 /* ── Single card ── */
@@ -359,4 +373,82 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
     .card { transition: none; }
+}
+
+.project-showcase {
+    position: absolute;
+    right: clamp(20px, 8vw, 120px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: clamp(280px, 35vw, 550px);
+    z-index: 2;
+}
+
+
+.project-showcase img {
+    width: 100%;
+    border-radius: 14px;
+    border: none;
+    display: block;
+    transition: opacity .5s ease;
+    -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, #000 45%, transparent 100%);
+    mask-image: radial-gradient(ellipse 70% 70% at center, #000 45%, transparent 100%);
+    filter: drop-shadow(0 0 40px rgba(59,130,246,0.12));
+}
+
+
+.project-info {
+    margin-top: 16px;
+    text-align: center;
+}
+
+.project-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    transition: opacity .5s ease;
+}
+
+.project-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    transition: opacity .5s ease;
+}
+
+.slider-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.dot:hover {
+    background: var(--text);
+}
+
+.dot:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+}
+
+.dot.active {
+    background: var(--blue);
+    transform: scale(1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dot { transition: none; }
+    .project-showcase img { transition: none; }
 }

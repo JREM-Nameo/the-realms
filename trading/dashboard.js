@@ -1,5 +1,5 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, computeStreak, showConfirm, initSidebarToggle } from './shared.js';
+import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, showConfirm, initSidebarToggle } from './shared.js';
 
 initSidebarToggle();
 
@@ -87,10 +87,8 @@ function computeDashboard(challenge, entries) {
         ? Math.min(100, Math.max(0, ((currentBalance - startingBalance) / (finalTargetVal - startingBalance)) * 100))
         : 0;
 
-    // Streak and days completed/remaining are based on the actual calendar,
-    // via start_date — not on how many entries happen to exist. A skipped
-    // day still counts as elapsed and breaks the streak.
-    const streak = computeStreak(entries);
+    // daysCompleted/remaining are based on the actual calendar, via
+    // start_date — not on how many entries happen to exist.
     const daysCompleted = daysElapsed(challenge);
     const daysRemaining = Math.max(0, challenge.duration_days - daysCompleted);
     const balanceDelta = currentBalance - prevBalance;
@@ -99,7 +97,7 @@ function computeDashboard(challenge, entries) {
 
     return {
         currentBalance, todaysTarget, finalTarget: finalTargetVal, progressPct,
-        streak, daysCompleted, daysRemaining, balanceDelta, balanceDeltaPct, targetGap
+        daysCompleted, daysRemaining, balanceDelta, balanceDeltaPct, targetGap
     };
 }
 
@@ -218,7 +216,6 @@ function render() {
     document.getElementById('statProgress').textContent = `${c.progressPct.toFixed(1)}%`;
     document.getElementById('statProgressBar').style.width = `${c.progressPct}%`;
 
-    document.getElementById('statStreak').textContent = `${c.streak} day${c.streak === 1 ? '' : 's'}`;
     document.getElementById('statDays').textContent = `${c.daysCompleted}/${currentChallenge.duration_days} days`;
 
     const list = document.getElementById('activityList');

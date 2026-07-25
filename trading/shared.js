@@ -4,7 +4,14 @@
 
 /* ── Date helpers ── */
 export const pad2 = (n) => String(n).padStart(2, '0');
-export const todayStr = () => new Date().toISOString().slice(0, 10);
+export const todayStr = () => {
+    // Use local date components, not toISOString() (which is UTC).
+    // toISOString() rolls over to the next day hours before local midnight
+    // for anyone west of UTC, which silently breaks streaks, "today's
+    // target", and the calendar's "today" highlight for those users.
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
 export const MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -99,26 +106,6 @@ export function dayStatus(challenge, dateStr, entry) {
     if (dateStr < today) return 'missed';
     if (dateStr === today) return 'pending';
     return 'upcoming';
-}
-
-/* ── Current streak, based on consecutive calendar days ──
-   Counts backward from today (or from yesterday if today isn't logged yet,
-   giving a same-day grace period) as long as each day has a logged entry.
-   A skipped day breaks the streak immediately, unlike counting entries
-   alone which ignores gaps in the calendar. */
-export function computeStreak(entries) {
-    const loggedDates = new Set(entries.map(e => e.entry_date));
-    if (!loggedDates.size) return 0;
-
-    let cursor = todayStr();
-    if (!loggedDates.has(cursor)) cursor = addDays(cursor, -1);
-
-    let streak = 0;
-    while (loggedDates.has(cursor)) {
-        streak++;
-        cursor = addDays(cursor, -1);
-    }
-    return streak;
 }
 
 /* ── Styled confirm modal ──
