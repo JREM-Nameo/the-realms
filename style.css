@@ -452,3 +452,93 @@ body {
     .dot { transition: none; }
     .project-showcase img { transition: none; }
 }
+
+/* ══════════════════════════════════════════════
+   Responsive layout
+   Below ~900px there isn't room for the hero text,
+   card grid, and project showcase to sit side by
+   side, so the page switches from an absolutely
+   positioned two-column layout to a single
+   scrollable column.
+   ══════════════════════════════════════════════ */
+@media (max-width: 900px) {
+    html, body {
+        height: auto;
+        min-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .page-body {
+        height: auto;
+        min-height: calc(100vh - var(--nav-h));
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 48px 20px 56px;
+        gap: 40px;
+    }
+
+    .hero-text {
+        position: static;
+        text-align: center;
+        max-width: 480px;
+    }
+
+    .card-grid {
+        position: static;
+        transform: none;
+        width: 100%;
+        max-width: 340px;
+        align-items: stretch;
+    }
+
+    .card {
+        width: 100%;
+    }
+
+    .project-showcase {
+        position: static;
+        transform: none;
+        width: 100%;
+        max-width: 420px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav {
+        padding: 0 14px;
+    }
+
+    .nav-logo {
+        font-size: 16px;
+    }
+
+    .nav-right {
+        gap: 6px;
+    }
+
+    .nav-status #signedInEmail {
+        display: none;
+    }
+
+    .nav-link,
+    .nav-donate {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .hero-sub {
+        font-size: 13px;
+    }
+
+    .page-body {
+        padding: 40px 16px 48px;
+        gap: 32px;
+    }
+
+    .qr-card,
+    .auth-card {
+        width: calc(100vw - 40px);
+        max-width: 300px;
+    }
+}
