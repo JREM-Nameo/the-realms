@@ -1,7 +1,8 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, todayStr, targetForDate, makeStateSwitcher, escapeHtml, showConfirm,
-    fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge, initSidebarToggle
+    fmtMoney, fmtPct, todayStr, makeStateSwitcher, escapeHtml, showConfirm,
+    fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge, initSidebarToggle,
+    getTargetMode, setTargetMode, dayTarget, renderTargetModeToggle
 } from './shared.js';
 
 initSidebarToggle();
@@ -15,6 +16,7 @@ const challengeSelect  = document.getElementById('challengeSelect');
 const newEntryBtn      = document.getElementById('newEntryBtn');
 const entryTableBody   = document.getElementById('entryTableBody');
 const progressChallengeName = document.getElementById('progressChallengeName');
+const targetModeToggle = document.getElementById('targetModeToggle');
 
 const entryPopup        = document.getElementById('entryPopup');
 const entryTitle         = document.getElementById('entryTitle');
@@ -56,6 +58,15 @@ document.addEventListener('keydown', (e) => {
 });
 
 gateSignInBtn.addEventListener('click', () => window.toggleAuth());
+
+if (targetModeToggle) {
+    targetModeToggle.addEventListener('change', (e) => {
+        const input = e.target.closest('.switch-input');
+        if (!input || !selectedChallenge) return;
+        setTargetMode(selectedChallenge.id, input.checked ? 'balance' : 'date');
+        renderTable();
+    });
+}
 
 function openEntryForm(mode, entry) {
     entryError.textContent = '';
@@ -139,6 +150,9 @@ async function loadEntries() {
 
 /* ── Render entry table ── */
 function renderTable() {
+    const targetMode = getTargetMode(selectedChallenge.id);
+    renderTargetModeToggle(targetModeToggle, targetMode);
+
     if (!entries.length) {
         entryTableBody.innerHTML = `<tr><td colspan="9" class="activity-empty">No entries yet — log your first day.</td></tr>`;
         return;
@@ -151,7 +165,7 @@ function renderTable() {
         const balance = Number(e.balance);
         const plDollar = balance - prevBalance;
         const plPct = prevBalance ? (plDollar / prevBalance) * 100 : 0;
-        const target = targetForDate(selectedChallenge, e.entry_date);
+        const target = dayTarget(selectedChallenge, e.entry_date, entries, targetMode);
         const gap = balance - target;
 
         const thumb = e.screenshot_url

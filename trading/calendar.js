@@ -1,8 +1,9 @@
 import { supabaseClient } from '../js/auth.js';
 import {
-    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, targetForDate, todayStr,
+    fmtMoney, fmtPct, pad2, MONTH_NAMES, escapeHtml, todayStr,
     makeStateSwitcher, fetchUserChallenges, populateChallengeSelect, pickPreferredChallenge,
-    dayStatus, challengeEndDate, initSidebarToggle
+    dayStatus, challengeEndDate, initSidebarToggle,
+    getTargetMode, setTargetMode, dayTarget, renderTargetModeToggle
 } from './shared.js';
 
 initSidebarToggle();
@@ -19,6 +20,7 @@ const prevMonthBtn = document.getElementById('prevMonthBtn');
 const nextMonthBtn = document.getElementById('nextMonthBtn');
 const monthLabel   = document.getElementById('monthLabel');
 const calendarGrid = document.getElementById('calendarGrid');
+const targetModeToggle = document.getElementById('targetModeToggle');
 
 const dayPopover = document.getElementById('dayPopover');
 const popDate    = document.getElementById('popDate');
@@ -32,6 +34,17 @@ let entryByDate = new Map(); // date string -> { entry, target, plDollar, plPct,
 let viewYear, viewMonth; // 0-indexed month
 
 gateSignInBtn.addEventListener('click', () => window.toggleAuth());
+
+if (targetModeToggle) {
+    targetModeToggle.addEventListener('change', (e) => {
+        const input = e.target.closest('.switch-input');
+        if (!input || !selectedChallenge) return;
+        setTargetMode(selectedChallenge.id, input.checked ? 'balance' : 'date');
+        buildEntryMap();
+        closePopover();
+        renderCalendar();
+    });
+}
 
 /* ── View switching ── */
 const showState = makeStateSwitcher({
@@ -97,11 +110,12 @@ async function loadEntries() {
 function buildEntryMap() {
     entryByDate = new Map();
     const startingBalance = Number(selectedChallenge.starting_balance);
+    const targetMode = getTargetMode(selectedChallenge.id);
 
     entries.forEach((e, i) => {
         const prevBalance = i > 0 ? Number(entries[i - 1].balance) : startingBalance;
         const balance = Number(e.balance);
-        const target = targetForDate(selectedChallenge, e.entry_date);
+        const target = dayTarget(selectedChallenge, e.entry_date, entries, targetMode);
         const plDollar = balance - prevBalance;
         const plPct = prevBalance ? (plDollar / prevBalance) * 100 : 0;
         entryByDate.set(e.entry_date, {
@@ -132,6 +146,8 @@ nextMonthBtn.addEventListener('click', () => {
 /* ── Render month grid ── */
 function renderCalendar() {
     monthLabel.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+    renderTargetModeToggle(targetModeToggle, getTargetMode(selectedChallenge.id));
+    const targetMode = getTargetMode(selectedChallenge.id);
 
     const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -153,7 +169,8 @@ function renderCalendar() {
         const dateStr = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(dayNum)}`;
         const inRange = dateStr >= startDate && dateStr <= endDate;
         const stats = entryByDate.get(dateStr);
-        const status = dayStatus(selectedChallenge, dateStr, stats ? stats.entry : null);
+        const target = dayTarget(selectedChallenge, dateStr, entries, targetMode);
+        const status = dayStatus(selectedChallenge, dateStr, stats ? stats.entry : null, target);
 
         let dotClass = 'cal-dot-none';
         if (status === 'hit') dotClass = 'cal-dot-hit';
@@ -184,7 +201,8 @@ calendarGrid.addEventListener('click', (e) => {
     if (!cell) return;
     const dateStr = cell.dataset.date;
     const stats = entryByDate.get(dateStr);
-    const status = dayStatus(selectedChallenge, dateStr, stats ? stats.entry : null);
+    const target = dayTarget(selectedChallenge, dateStr, entries, getTargetMode(selectedChallenge.id));
+    const status = dayStatus(selectedChallenge, dateStr, stats ? stats.entry : null, target);
 
     popDate.textContent = formatLongDate(dateStr);
     popBody.innerHTML = buildPopoverBody(dateStr, stats, status);
@@ -205,7 +223,7 @@ function buildPopoverBody(dateStr, stats, status) {
         `;
     }
 
-    const target = targetForDate(selectedChallenge, dateStr);
+    const target = dayTarget(selectedChallenge, dateStr, entries, getTargetMode(selectedChallenge.id));
 
     switch (status) {
         case 'missed':
