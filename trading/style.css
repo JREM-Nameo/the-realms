@@ -381,6 +381,126 @@ html, body.trading-body {
 .chip-btn.danger { color: #F87171; }
 .chip-btn.danger:hover { border-color: rgba(248,113,113,0.4); }
 
+/* ── Stat card label + inline toggle ── */
+.stat-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.stat-label-row .stat-label { margin: 0; }
+.stat-card .switch-label { font-size: 10px; }
+@media (max-width: 400px) {
+    .stat-card .switch-label { display: none; }
+}
+
+/* ── Target mode switch (Ideal Curve / Vs Yesterday) ── */
+.target-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.switch-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+.switch-track {
+    position: absolute;
+    inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: background 0.15s, border-color 0.15s;
+}
+.switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: transform 0.15s, background 0.15s;
+}
+.switch-input:checked ~ .switch-track {
+    background: var(--blue-dim);
+    border-color: rgba(59,130,246,0.4);
+}
+.switch-input:checked ~ .switch-track .switch-thumb {
+    transform: translateX(14px);
+    background: var(--blue);
+}
+.switch-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+.info-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: default;
+    flex-shrink: 0;
+}
+.info-icon .info-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: min(220px, 70vw);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--text);
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s;
+    z-index: 20;
+    pointer-events: none;
+}
+.info-icon:hover .info-tooltip,
+.info-icon:focus .info-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+@media (max-width: 480px) {
+    .info-icon .info-tooltip {
+        left: auto;
+        right: -6px;
+        transform: none;
+    }
+}
+
 /* ── Challenge select (Progress page) ── */
 .challenge-select {
     background: var(--surface2);
@@ -398,6 +518,10 @@ html, body.trading-body {
 }
 .dash-actions {
     min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 @media (max-width: 560px) {
     .dash-header {
@@ -405,6 +529,10 @@ html, body.trading-body {
         align-items: stretch;
     }
     .dash-actions {
+        width: 100%;
+    }
+    .dash-actions .target-mode-switch {
+        order: -1;
         width: 100%;
     }
     .dash-actions .challenge-select,

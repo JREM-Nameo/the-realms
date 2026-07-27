@@ -67,6 +67,76 @@ export function targetForDate(challenge, dateStr) {
     return targetForDay(challenge, daysBetween(challenge.start_date, dateStr) + 1);
 }
 
+/* ── Target mode (toggle) ──
+   'date'    - the original behaviour: target compounds from start_date on
+               a fixed ideal curve, regardless of what was actually logged.
+   'balance' - target compounds off *yesterday's actual logged balance*
+               instead, so missing a target one day recalibrates the next
+               day's target to reality rather than the ideal curve.
+   Stored per-challenge in localStorage (no DB migration needed), so it's
+   a lightweight per-challenge toggle rather than a global setting. */
+export function getTargetMode(challengeId) {
+    try {
+        return localStorage.getItem(`targetMode:${challengeId}`) === 'balance' ? 'balance' : 'date';
+    } catch {
+        return 'date';
+    }
+}
+export function setTargetMode(challengeId, mode) {
+    try { localStorage.setItem(`targetMode:${challengeId}`, mode); } catch { /* ignore */ }
+}
+
+/* Last actual logged balance strictly before dateStr (falls back to
+   starting_balance if nothing's been logged yet). entries must be sorted
+   ascending by entry_date — every page already loads them that way. */
+export function priorBalanceForDate(challenge, dateStr, entries) {
+    let balance = Number(challenge.starting_balance);
+    for (const e of entries) {
+        if (e.entry_date < dateStr) balance = Number(e.balance);
+        else break;
+    }
+    return balance;
+}
+
+/* Mode-aware target for a given date. This is what pages should call
+   instead of targetForDate() directly wherever the toggle applies. */
+export function dayTarget(challenge, dateStr, entries, mode) {
+    if (mode === 'balance') {
+        const rate = challenge.daily_target_percent / 100;
+        return priorBalanceForDate(challenge, dateStr, entries) * (1 + rate);
+    }
+    return targetForDate(challenge, dateStr);
+}
+
+/* Renders the two-way "Ideal Curve" / "Vs Yesterday" switch into a
+   container element. Pages wire a single click listener on the container
+   (event delegation) to react to `data-mode` on the clicked button. */
+/* Descriptions shown in the tooltip, one per mode. */
+const TARGET_MODE_INFO = {
+    date: "Ideal Curve: today's target compounds on a fixed schedule from your starting balance and duration. It never changes, no matter what you actually log.",
+    balance: "Vs Yesterday: today's target compounds from yesterday's actual logged balance. Missing a day recalibrates tomorrow's target to reality instead of the ideal curve."
+};
+
+/* Renders a single on/off switch (not a segmented control) with a label
+   that updates to the active mode's name, and a small "?" icon that shows
+   the full explanation on hover/focus. Pages listen for a 'change' event
+   on the container (event delegation) and read e.target.checked. */
+export function renderTargetModeToggle(container, mode) {
+    if (!container) return;
+    const isBalance = mode === 'balance';
+    container.innerHTML = `
+        <div class="target-mode-switch">
+            <label class="switch">
+                <input type="checkbox" class="switch-input" ${isBalance ? 'checked' : ''}>
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+            <span class="switch-label">${isBalance ? 'Vs Yesterday' : 'Ideal Curve'}</span>
+            <span class="info-icon" tabindex="0">?
+                <span class="info-tooltip">${TARGET_MODE_INFO[isBalance ? 'balance' : 'date']}</span>
+            </span>
+        </div>`;
+}
+
 /* ── Challenge date range ──
    start_date is day 1 of the challenge; the challenge covers duration_days
    calendar days total, so the last day is start_date + (duration_days - 1). */
@@ -92,14 +162,14 @@ export function daysElapsed(challenge) {
      'pending'  - no entry, but it's today (still time to log)
      'upcoming' - no entry, day hasn't arrived yet
      'outside'  - date falls outside the challenge's start–end range */
-export function dayStatus(challenge, dateStr, entry) {
+export function dayStatus(challenge, dateStr, entry, target) {
     const start = challenge.start_date;
     const end = challengeEndDate(challenge);
     if (dateStr < start || dateStr > end) return 'outside';
 
     if (entry) {
-        const target = targetForDate(challenge, dateStr);
-        return Number(entry.balance) >= target ? 'hit' : 'miss';
+        const resolvedTarget = target != null ? target : targetForDate(challenge, dateStr);
+        return Number(entry.balance) >= resolvedTarget ? 'hit' : 'miss';
     }
 
     const today = todayStr();

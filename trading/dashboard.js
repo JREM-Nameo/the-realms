@@ -1,5 +1,9 @@
 import { supabaseClient } from '../js/auth.js';
-import { fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, targetForDate, finalTarget, makeStateSwitcher, daysElapsed, dayStatus, showConfirm, initSidebarToggle } from './shared.js';
+import {
+    fmtMoney, fmtPct, todayStr, pad2, MONTH_NAMES, targetForDay, finalTarget, makeStateSwitcher,
+    daysElapsed, dayStatus, showConfirm, initSidebarToggle,
+    getTargetMode, setTargetMode, dayTarget, renderTargetModeToggle
+} from './shared.js';
 
 initSidebarToggle();
 
@@ -14,6 +18,7 @@ const emptyCreateBtn  = document.getElementById('emptyCreateBtn');
 const logBtn          = document.getElementById('logBtn');
 const miniChartContainer = document.getElementById('miniChartContainer');
 const miniCalStrip       = document.getElementById('miniCalStrip');
+const targetModeToggle   = document.getElementById('targetModeToggle');
 
 const createPopup     = document.getElementById('createPopup');
 const cName            = document.getElementById('cName');
@@ -62,6 +67,15 @@ gateSignInBtn.addEventListener('click', () => window.toggleAuth());
 emptyCreateBtn.addEventListener('click', () => window.toggleCreate());
 logBtn.addEventListener('click', () => window.toggleLog());
 
+if (targetModeToggle) {
+    targetModeToggle.addEventListener('change', (e) => {
+        const input = e.target.closest('.switch-input');
+        if (!input || !currentChallenge) return;
+        setTargetMode(currentChallenge.id, input.checked ? 'balance' : 'date');
+        render();
+    });
+}
+
 /* ── View switching ── */
 const showState = makeStateSwitcher({
     loading: loadingState,
@@ -71,7 +85,7 @@ const showState = makeStateSwitcher({
 });
 
 /* ── Core calculations ── */
-function computeDashboard(challenge, entries) {
+function computeDashboard(challenge, entries, targetMode) {
     const startingBalance = Number(challenge.starting_balance);
     const currentBalance = entries.length
         ? Number(entries[entries.length - 1].balance)
@@ -80,7 +94,7 @@ function computeDashboard(challenge, entries) {
         ? Number(entries[entries.length - 2].balance)
         : startingBalance;
 
-    const todaysTarget = targetForDate(challenge, todayStr());
+    const todaysTarget = dayTarget(challenge, todayStr(), entries, targetMode);
     const finalTargetVal = finalTarget(challenge);
 
     const progressPct = finalTargetVal > startingBalance
@@ -137,7 +151,7 @@ function buildMiniChartSvg(challenge, entries) {
 }
 
 /* ── Mini monthly calendar (current month) ── */
-function buildMiniMonthCalendar(challenge, entries) {
+function buildMiniMonthCalendar(challenge, entries, targetMode) {
     const entryByDate = new Map();
     entries.forEach((e) => entryByDate.set(e.entry_date, e));
 
@@ -160,7 +174,8 @@ function buildMiniMonthCalendar(challenge, entries) {
         }
 
         const dateStr = `${year}-${pad2(month + 1)}-${pad2(dayNum)}`;
-        const status = dayStatus(challenge, dateStr, entryByDate.get(dateStr));
+        const target = dayTarget(challenge, dateStr, entries, targetMode);
+        const status = dayStatus(challenge, dateStr, entryByDate.get(dateStr), target);
         let dotClass = 'cal-dot-none';
         if (status === 'hit') dotClass = 'cal-dot-hit';
         else if (status === 'miss' || status === 'missed') dotClass = 'cal-dot-miss';
@@ -181,8 +196,9 @@ function buildMiniMonthCalendar(challenge, entries) {
 }
 
 function renderMiniWidgets() {
+    const targetMode = getTargetMode(currentChallenge.id);
     miniChartContainer.innerHTML = buildMiniChartSvg(currentChallenge, currentEntries);
-    miniCalStrip.innerHTML = buildMiniMonthCalendar(currentChallenge, currentEntries);
+    miniCalStrip.innerHTML = buildMiniMonthCalendar(currentChallenge, currentEntries, targetMode);
     document.getElementById('miniCalTitle').textContent = MONTH_NAMES[new Date().getMonth()];
 }
 
@@ -194,7 +210,10 @@ function render() {
     document.getElementById('challengeStatus').textContent =
         currentChallenge.status.charAt(0).toUpperCase() + currentChallenge.status.slice(1) + ' Challenge';
 
-    const c = computeDashboard(currentChallenge, currentEntries);
+    const targetMode = getTargetMode(currentChallenge.id);
+    renderTargetModeToggle(targetModeToggle, targetMode);
+
+    const c = computeDashboard(currentChallenge, currentEntries, targetMode);
 
     document.getElementById('statBalance').textContent = fmtMoney(c.currentBalance);
     const deltaEl = document.getElementById('statBalanceDelta');
