@@ -1,0 +1,6 @@
+[submodule "origin"]
+	path = origin
+	url = https://github.com/JREM-Nameo/realms-origin.git
+[submodule "trading"]
+	path = trading
+	url = https://github.com/JREM-Nameo/realms-trading.git
