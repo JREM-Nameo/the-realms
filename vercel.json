@@ -1,8 +1,3 @@
-cat > vercel.json << 'EOF'
 {
   "installCommand": "git submodule update --init --recursive"
 }
-EOF
-git add vercel.json
-git commit -m "Add vercel.json to fetch submodules on build"
-git push
