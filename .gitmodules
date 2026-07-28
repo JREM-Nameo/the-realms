@@ -4,3 +4,6 @@
 [submodule "trading"]
 	path = trading
 	url = https://github.com/JREM-Nameo/realms-trading.git
+[submodule "realms-teams"]
+	path = realms-teams
+	url = https://github.com/JREM-Nameo/realms-teams.git
