@@ -74,14 +74,20 @@ authSubmitBtn.addEventListener('click', async () => {
 
 /* ── Google ── */
 googleBtn.addEventListener('click', () => {
+    const cleanUrl = window.location.origin + window.location.pathname;
     supabaseClient.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.href }
+        options: { redirectTo: cleanUrl }
     });
 });
 
 /* ── Sign out ── */
-signOutBtn.addEventListener('click', () => supabaseClient.auth.signOut());
+signOutBtn.addEventListener('click', async () => {
+    signOutBtn.disabled = true;
+    const { error } = await supabaseClient.auth.signOut();
+    signOutBtn.disabled = false;
+    if (error) console.error('Sign out error:', error);
+});
 
 /* ── Nav reflects auth state on every page load and change ── */
 supabaseClient.auth.onAuthStateChange((_event, session) => {
