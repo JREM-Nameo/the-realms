@@ -7,6 +7,3 @@
 [submodule "realms-teams"]
 	path = realms-teams
 	url = https://github.com/JREM-Nameo/realms-teams.git
-[submodule "team"]
-	path = team
-	url = https://github.com/JREM-Nameo/realms-teams.git
