@@ -456,15 +456,16 @@ body {
 /* ══════════════════════════════════════════════
    Short desktop viewports
    .card-grid is vertically centered and absolutely
-   positioned — fine for 2 cards, but a 3rd card adds
-   ~85px to that centered stack. On shorter windows
-   (laptops, browser not maximized) that can crowd the
-   hero text above it or clip against the nav below,
-   since .page-body has overflow: hidden and won't
-   scroll to compensate the way the sub-900px layout
-   does. Tighten spacing and shrink the hero title so
-   everything still fits without touching the >900px
-   two-column structure itself.
+   positioned — fine for 2 cards, but each card added
+   since (3rd, now a 4th) adds ~85px to that centered
+   stack. On shorter windows (laptops, browser not
+   maximized) that can crowd the hero text above it or
+   clip against the nav below, since .page-body has
+   overflow: hidden and won't scroll to compensate the
+   way the sub-900px layout does. Tighten spacing and
+   shrink the hero title so everything still fits
+   without touching the >900px two-column structure
+   itself.
    ══════════════════════════════════════════════ */
 @media (min-width: 901px) and (max-height: 760px) {
     .hero-text {
@@ -475,10 +476,10 @@ body {
         margin-bottom: 4px;
     }
     .card-grid {
-        gap: 8px;
+        gap: 6px;
     }
     .card {
-        padding: 12px 18px;
+        padding: 10px 16px;
     }
 }
 
