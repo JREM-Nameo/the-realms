@@ -7,3 +7,6 @@
 [submodule "realms-teams"]
 	path = realms-teams
 	url = https://github.com/JREM-Nameo/realms-teams.git
+[submodule "Stackrift"]
+	path = Stackrift
+	url = https://github.com/JREM-Nameo/Stackrift.git
