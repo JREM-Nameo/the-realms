@@ -160,11 +160,11 @@
   .candle:hover{ transform:translateY(-2px); }
   .flame{
     position:absolute;
-    top:-30px;
+    top:-34px;
     left:50%;
     transform:translateX(-50%);
-    width:16px;
-    height:24px;
+    width:18px;
+    height:26px;
     background:radial-gradient(circle at 50% 70%, var(--green), var(--blue) 70%);
     border-radius:50% 50% 50% 50% / 65% 65% 35% 35%;
     animation:flicker 0.6s ease-in-out infinite alternate;
@@ -187,6 +187,42 @@
     margin-top:10px;
     min-height:20px;
     font-weight:700;
+  }
+
+  .blow-btn{
+    margin-top:10px;
+    font-family:'Nunito', sans-serif;
+    font-weight:700;
+    font-size:0.85rem;
+    color:var(--ink);
+    background:var(--green);
+    border:none;
+    border-radius:999px;
+    padding:8px 18px;
+    cursor:pointer;
+    z-index:2;
+    position:relative;
+    transition:transform 0.15s ease, opacity 0.15s ease;
+  }
+  .blow-btn:hover{ transform:translateY(-1px); }
+  .blow-btn:disabled{ cursor:default; opacity:0.75; }
+
+  .mic-meter{
+    display:none;
+    width:140px;
+    height:6px;
+    border-radius:4px;
+    background:rgba(245,248,252,0.15);
+    margin:10px auto 0;
+    overflow:hidden;
+    z-index:2;
+    position:relative;
+  }
+  .mic-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--blue), var(--green));
+    transition:width 0.06s linear;
   }
 
   .message{
@@ -223,8 +259,8 @@
     .subline{ margin-bottom:32px; font-size:1rem; }
     .cake{ width:260px; }
     .candles{ gap:4px; }
-    .candle{ font-size:52px; }
-    .flame{ width:12px; height:18px; top:-22px; }
+    .candle{ font-size:76px; }
+    .flame{ width:14px; height:20px; top:-25px; }
     .message{ font-size:0.98rem; }
   }
 
@@ -310,6 +346,8 @@
       </svg>
     </div>
     <div class="hint" id="hint">2 candles left to blow out</div>
+    <button class="blow-btn" id="blowBtn" type="button">🎙️ Actually blow (use mic)</button>
+    <div class="mic-meter"><div class="mic-fill" id="micLevel"></div></div>
   </div>
 
   <p class="message" id="message">
@@ -368,29 +406,115 @@
   const headline = document.getElementById('headline');
   const message = document.getElementById('message');
   const signature = document.getElementById('signature');
+  const blowBtn = document.getElementById('blowBtn');
+  const micLevel = document.getElementById('micLevel');
   let remaining = candles.length;
 
+  function extinguishOne(candle){
+    if(!candle || candle.classList.contains('out')) return;
+    candle.classList.add('out');
+    remaining--;
+    if(remaining > 0){
+      hint.textContent = remaining + (remaining===1 ? ' candle left to blow out' : ' candles left to blow out');
+    } else {
+      hint.textContent = 'Wish made ✨';
+      headline.classList.add('celebrate');
+      speedlines.classList.add('show');
+      spawnSparkles(60);
+      spawnBalloons(10);
+      setTimeout(()=>{
+        message.classList.add('show');
+        signature.classList.add('show');
+      }, 300);
+      setTimeout(()=> speedlines.classList.remove('show'), 3000);
+      stopBlowDetection();
+    }
+  }
+
   candles.forEach(candle=>{
-    candle.addEventListener('click', ()=>{
-      if(candle.classList.contains('out')) return;
-      candle.classList.add('out');
-      remaining--;
-      if(remaining > 0){
-        hint.textContent = remaining + (remaining===1 ? ' candle left to blow out' : ' candles left to blow out');
-      } else {
-        hint.textContent = 'Wish made ✨';
-        headline.classList.add('celebrate');
-        speedlines.classList.add('show');
-        spawnSparkles(60);
-        spawnBalloons(10);
-        setTimeout(()=>{
-          message.classList.add('show');
-          signature.classList.add('show');
-        }, 300);
-        setTimeout(()=> speedlines.classList.remove('show'), 3000);
-      }
-    });
+    candle.addEventListener('click', ()=> extinguishOne(candle));
   });
+
+  function nextLitCandle(){
+    return Array.from(candles).find(c => !c.classList.contains('out'));
+  }
+
+  // --- Real microphone blow detection ---
+  let audioCtx, analyser, micStream, rafId;
+
+  async function startBlowDetection(){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      blowBtn.textContent = 'Mic not supported here — tap candles instead';
+      blowBtn.disabled = true;
+      return;
+    }
+    try{
+      micStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaStreamSource(micStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      blowBtn.textContent = 'Listening — blow now!';
+      blowBtn.disabled = true;
+      micLevel.parentElement.style.display = 'block';
+      detectLoop();
+    } catch(err){
+      blowBtn.textContent = 'Mic access denied — tap candles instead';
+      blowBtn.disabled = true;
+    }
+  }
+
+  function detectLoop(){
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    let blowStreak = 0;
+    let cooldown = 0;
+
+    function loop(){
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for(let i=0;i<data.length;i++){
+        const v = (data[i]-128)/128;
+        sum += v*v;
+      }
+      const rms = Math.sqrt(sum/data.length);
+      micLevel.style.width = Math.min(100, rms*450) + '%';
+
+      const BLOW_THRESHOLD = 0.16;
+      if(rms > BLOW_THRESHOLD){
+        blowStreak++;
+      } else {
+        blowStreak = Math.max(0, blowStreak-2);
+      }
+
+      if(cooldown > 0) cooldown--;
+
+      if(blowStreak > 5 && cooldown === 0){
+        const candle = nextLitCandle();
+        if(candle){
+          extinguishOne(candle);
+          blowStreak = 0;
+          cooldown = 40;
+        }
+      }
+
+      if(remaining > 0){
+        rafId = requestAnimationFrame(loop);
+      } else {
+        stopBlowDetection();
+      }
+    }
+    loop();
+  }
+
+  function stopBlowDetection(){
+    if(rafId) cancelAnimationFrame(rafId);
+    if(micStream) micStream.getTracks().forEach(t=>t.stop());
+    if(audioCtx) audioCtx.close();
+    if(micLevel && micLevel.parentElement) micLevel.parentElement.style.display = 'none';
+  }
+
+  blowBtn.addEventListener('click', startBlowDetection);
 </script>
 
 </body>
