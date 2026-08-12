@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Happy Birthday, Jhon Lloyd!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1116;
+    --ink-soft:#161B22;
+    --blue:#2F7BFF;
+    --blue-soft:#7FB2FF;
+    --green:#2FE6A0;
+    --white:#F5F8FC;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    height:100%;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(47,123,255,0.18), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(47,230,160,0.14), transparent 40%),
+      var(--ink);
+    font-family:'Nunito', sans-serif;
+    overflow-x:hidden;
+    color:var(--white);
+  }
+  .stage{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    padding:40px 20px 80px;
+    text-align:center;
+  }
+
+  /* Speed lines - anime energy burst, hidden until triggered */
+  .speedlines{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    opacity:0;
+    background:repeating-conic-gradient(from 0deg, rgba(47,123,255,0.10) 0deg 2deg, transparent 2deg 8deg);
+    transition:opacity 0.4s ease;
+  }
+  .speedlines.show{ opacity:1; animation:spin 12s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* Sparkles (anime shoujo-style) */
+  .sparkle{
+    position:fixed;
+    top:-10px;
+    z-index:1;
+    animation:fall linear infinite;
+  }
+  @keyframes fall{
+    0%{ transform:translateY(-10vh) rotate(0deg) scale(1); opacity:1;}
+    100%{ transform:translateY(110vh) rotate(200deg) scale(0.8); opacity:0.5;}
+  }
+
+  /* Balloons */
+  .balloon{
+    position:fixed;
+    bottom:-140px;
+    width:50px;
+    height:64px;
+    border-radius:50% 50% 48% 48%;
+    animation:rise linear infinite;
+    z-index:1;
+    opacity:0.9;
+    box-shadow:inset -8px -8px 16px rgba(0,0,0,0.15);
+  }
+  .balloon::after{
+    content:'';
+    position:absolute;
+    left:50%;
+    bottom:-46px;
+    width:1px;
+    height:46px;
+    background:rgba(245,248,252,0.3);
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) translateX(0);}
+    50%{ transform:translateY(-60vh) translateX(20px);}
+    100%{ transform:translateY(-120vh) translateX(-10px);}
+  }
+
+  .eyebrow{
+    letter-spacing:0.3em;
+    text-transform:uppercase;
+    font-size:0.75rem;
+    color:var(--blue-soft);
+    font-weight:700;
+    margin-bottom:18px;
+    z-index:2;
+  }
+
+  h1{
+    font-family:'Baloo 2', cursive;
+    font-weight:800;
+    font-size:clamp(2.4rem, 8vw, 5rem);
+    margin:0 0 8px;
+    line-height:1.05;
+    background:linear-gradient(90deg, var(--blue), var(--green) 60%, var(--blue-soft));
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+    z-index:2;
+    transition:transform 0.4s ease;
+  }
+  h1.celebrate{ animation:pop 0.6s ease; }
+  @keyframes pop{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.08) rotate(-1deg);}
+    70%{transform:scale(0.98) rotate(1deg);}
+    100%{transform:scale(1);}
+  }
+
+  .subline{
+    font-size:1.1rem;
+    color:var(--white);
+    opacity:0.8;
+    max-width:480px;
+    margin:0 0 46px;
+    z-index:2;
+  }
+  .subline strong{ color:var(--green); }
+
+  /* Cake */
+  .cake-wrap{ position:relative; z-index:2; margin-bottom:22px; }
+  .cake{ width:320px; position:relative; aspect-ratio:220 / 160; }
+  .candles{
+    position:absolute;
+    left:50%;
+    bottom:68%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:6px;
+    z-index:2;
+  }
+  .candle{
+    font-family:'Baloo 2', cursive;
+    font-weight:800;
+    font-size:100px;
+    line-height:0.8;
+    position:relative;
+    cursor:pointer;
+    background:linear-gradient(180deg, var(--blue-soft), var(--blue));
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,0.3));
+    transition:transform 0.2s ease;
+    user-select:none;
+  }
+  .candle:hover{ transform:translateY(-2px); }
+  .flame{
+    position:absolute;
+    top:-30px;
+    left:50%;
+    transform:translateX(-50%);
+    width:16px;
+    height:24px;
+    background:radial-gradient(circle at 50% 70%, var(--green), var(--blue) 70%);
+    border-radius:50% 50% 50% 50% / 65% 65% 35% 35%;
+    animation:flicker 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes flicker{
+    0%{ transform:translateX(-50%) scale(1) rotate(-2deg); }
+    100%{ transform:translateX(-50%) scale(1.12) rotate(2deg); }
+  }
+  .candle.out .flame{ display:none; }
+  .candle.out{ -webkit-text-fill-color:rgba(127,178,255,0.35); }
+
+  .cake-body{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cake-back{ z-index:1; filter:drop-shadow(0 10px 18px rgba(0,0,0,0.35)); }
+  .cake-icing{ z-index:3; pointer-events:none; }
+
+  .hint{
+    font-size:0.85rem;
+    color:var(--blue-soft);
+    z-index:2;
+    margin-top:10px;
+    min-height:20px;
+    font-weight:700;
+  }
+
+  .message{
+    z-index:2;
+    max-width:480px;
+    margin-top:20px;
+    font-size:1.05rem;
+    line-height:1.6;
+    opacity:0;
+    transform:translateY(12px);
+    transition:opacity 0.6s ease, transform 0.6s ease;
+  }
+  .message.show{ opacity:1; transform:translateY(0); }
+  .message b{ color:var(--green); }
+
+  .signature{
+    margin-top:36px;
+    font-family:'Baloo 2', cursive;
+    font-size:1.1rem;
+    color:var(--blue-soft);
+    z-index:2;
+    opacity:0;
+    transition:opacity 0.8s ease 0.3s;
+  }
+  .signature.show{ opacity:1; }
+
+  @media (prefers-reduced-motion: reduce){
+    .sparkle, .balloon, .flame, h1.celebrate, .speedlines{ animation:none !important; }
+  }
+
+  /* Mobile tightening */
+  @media (max-width: 480px){
+    .stage{ padding:28px 16px 56px; }
+    .subline{ margin-bottom:32px; font-size:1rem; }
+    .cake{ width:260px; }
+    .candles{ gap:4px; }
+    .candle{ font-size:52px; }
+    .flame{ width:12px; height:18px; top:-22px; }
+    .message{ font-size:0.98rem; }
+  }
+
+  /* Short / landscape screens: avoid vertical crowding */
+  @media (max-height: 560px) and (orientation: landscape){
+    .stage{ padding:20px 20px 40px; justify-content:flex-start; }
+    .eyebrow{ margin-bottom:10px; }
+    .subline{ margin-bottom:20px; }
+    .cake-wrap{ margin-bottom:12px; }
+    h1{ font-size:clamp(1.8rem, 6vw, 3rem); }
+  }
+</style>
+</head>
+<body>
+
+<div class="speedlines" id="speedlines"></div>
+<div class="stage" id="stage">
+  <div class="eyebrow">A little celebration, just for you</div>
+  <h1 id="headline">Happy 21st Birthday,<br>Jhon Lloyd!</h1>
+  <p class="subline">Officially 21 and main character energy only today — yes, even before your nap. <strong>Make a wish</strong> and blow out the candles.</p>
+
+  <div class="cake-wrap">
+    <div class="cake">
+      <svg class="cake-body cake-back" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#EAF2FF"/>
+            <stop offset="100%" stop-color="#2F7BFF"/>
+          </linearGradient>
+          <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4FF0B4"/>
+            <stop offset="100%" stop-color="#1BAE7C"/>
+          </linearGradient>
+        </defs>
+
+        <!-- plate shadow -->
+        <ellipse cx="110" cy="146" rx="95" ry="9" fill="#000" opacity="0.35"/>
+        <ellipse cx="110" cy="142" rx="100" ry="9" fill="#F5F8FC" opacity="0.12"/>
+
+        <!-- bottom tier -->
+        <rect x="18" y="82" width="184" height="52" rx="14" fill="url(#greenGrad)"/>
+
+        <!-- top tier -->
+        <rect x="46" y="40" width="128" height="48" rx="12" fill="url(#blueGrad)"/>
+
+        <!-- icing drips off top tier -->
+        <g fill="#F5F8FC">
+          <ellipse cx="60" cy="90" rx="7" ry="11"/>
+          <ellipse cx="85" cy="92" rx="6" ry="9"/>
+          <ellipse cx="110" cy="90" rx="7" ry="12"/>
+          <ellipse cx="135" cy="92" rx="6" ry="9"/>
+          <ellipse cx="160" cy="90" rx="7" ry="11"/>
+        </g>
+
+        <!-- sprinkles -->
+        <g>
+          <rect x="30" y="100" width="4" height="10" rx="2" fill="#F5F8FC" transform="rotate(15 30 100)"/>
+          <rect x="50" y="112" width="4" height="10" rx="2" fill="#0E1116" transform="rotate(-20 50 112)"/>
+          <rect x="150" y="104" width="4" height="10" rx="2" fill="#F5F8FC" transform="rotate(25 150 104)"/>
+          <rect x="175" y="115" width="4" height="10" rx="2" fill="#2F7BFF" transform="rotate(-10 175 115)"/>
+          <circle cx="40" cy="120" r="3" fill="#2F7BFF"/>
+          <circle cx="180" cy="100" r="3" fill="#0E1116"/>
+        </g>
+
+        <!-- kawaii face -->
+        <g stroke="#0E1116" stroke-width="3" stroke-linecap="round" fill="none">
+          <path d="M75,107 q5,-9 10,0"/>
+          <path d="M135,107 q5,-9 10,0"/>
+          <path d="M100,116 q10,9 20,0"/>
+        </g>
+        <circle cx="70" cy="115" r="6" fill="#7FB2FF" opacity="0.55"/>
+        <circle cx="150" cy="115" r="6" fill="#7FB2FF" opacity="0.55"/>
+      </svg>
+
+      <div class="candles" id="candles">
+        <div class="candle" data-idx="0">2<div class="flame"></div></div>
+        <div class="candle" data-idx="1">1<div class="flame"></div></div>
+      </div>
+
+      <svg class="cake-body cake-icing" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- scalloped icing on top tier, drawn in front so candle sticks tuck behind it -->
+        <path d="M46,40 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 L174,52 L46,52 Z" fill="#F5F8FC"/>
+      </svg>
+    </div>
+    <div class="hint" id="hint">2 candles left to blow out</div>
+  </div>
+
+  <p class="message" id="message">
+    Here's to <b>Jhon Lloyd</b> on his 21st — the guy who makes everyone around him feel like part
+    of the crew, and the undisputed champion of a well-earned nap. May this new chapter bring you
+    plot armor for the hard days, a soundtrack as good as your favorite openings, ten more hours of
+    sleep than you actually need, and a story arc that just keeps getting better. Happy birthday! 🎉
+  </p>
+  <div class="signature" id="signature">— made with care, for your day</div>
+</div>
+
+<script>
+  const stage = document.getElementById('stage');
+  const speedlines = document.getElementById('speedlines');
+  const sparkleColors = ['#2F7BFF','#2FE6A0','#F5F8FC','#7FB2FF'];
+
+  function spawnSparkles(n){
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      const size = 5 + Math.random()*6;
+      const color = sparkleColors[Math.floor(Math.random()*sparkleColors.length)];
+      const isStar = Math.random() > 0.5;
+      s.style.left = Math.random()*100 + 'vw';
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.background = color;
+      s.style.borderRadius = isStar ? '2px' : '50%';
+      s.style.boxShadow = '0 0 6px ' + color;
+      s.style.animationDuration = (3 + Math.random()*3) + 's';
+      s.style.animationDelay = (Math.random()*4) + 's';
+      stage.appendChild(s);
+      setTimeout(()=>s.remove(), 9000);
+    }
+  }
+
+  function spawnBalloons(n){
+    const balloonColors = ['#2F7BFF','#2FE6A0','#0E1116','#F5F8FC'];
+    for(let i=0;i<n;i++){
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      b.style.left = (5 + Math.random()*90) + 'vw';
+      b.style.background = balloonColors[Math.floor(Math.random()*balloonColors.length)];
+      b.style.border = '1px solid rgba(245,248,252,0.25)';
+      b.style.animationDuration = (7 + Math.random()*4) + 's';
+      b.style.animationDelay = (Math.random()*2) + 's';
+      document.body.appendChild(b);
+      setTimeout(()=>b.remove(), 14000);
+    }
+  }
+
+  spawnSparkles(22);
+
+  const candles = document.querySelectorAll('.candle');
+  const hint = document.getElementById('hint');
+  const headline = document.getElementById('headline');
+  const message = document.getElementById('message');
+  const signature = document.getElementById('signature');
+  let remaining = candles.length;
+
+  candles.forEach(candle=>{
+    candle.addEventListener('click', ()=>{
+      if(candle.classList.contains('out')) return;
+      candle.classList.add('out');
+      remaining--;
+      if(remaining > 0){
+        hint.textContent = remaining + (remaining===1 ? ' candle left to blow out' : ' candles left to blow out');
+      } else {
+        hint.textContent = 'Wish made ✨';
+        headline.classList.add('celebrate');
+        speedlines.classList.add('show');
+        spawnSparkles(60);
+        spawnBalloons(10);
+        setTimeout(()=>{
+          message.classList.add('show');
+          signature.classList.add('show');
+        }, 300);
+        setTimeout(()=> speedlines.classList.remove('show'), 3000);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
