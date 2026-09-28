@@ -1,0 +1,206 @@
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg:        #0B0B10;
+    --surface:   #15151D;
+    --border:    rgba(255,255,255,0.08);
+    --text:      #F2EFEA;
+    --text-dim:  #8B8B99;
+    --rift:      #3B82F6;
+    --rift-soft: rgba(59,130,246,0.14);
+    --live:      #34D399;
+    --dev:       #F59E0B;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* ── Top bar ── */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px clamp(20px, 6vw, 64px);
+    border-bottom: 1px solid var(--border);
+}
+
+.crumbs {
+    font-size: 13px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.crumbs a {
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+.crumbs a:hover { color: var(--text); }
+.crumbs .sep { color: var(--border); }
+.crumbs .current { color: var(--rift); font-weight: 500; }
+
+.back-link {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+.back-link:hover { color: var(--text); }
+
+/* ── Hero ── */
+.hero {
+    padding: 72px clamp(20px, 6vw, 64px) 48px;
+    max-width: 1100px;
+}
+.hero-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 700;
+    font-size: clamp(40px, 7vw, 68px);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    position: relative;
+    display: inline-block;
+}
+.hero-title::after {
+    content: '';
+    display: block;
+    width: 92px;
+    height: 3px;
+    margin-top: 18px;
+    background: linear-gradient(90deg, var(--rift), transparent);
+}
+
+/* ── Game rows ── */
+.games {
+    display: flex;
+    flex-direction: column;
+}
+
+.game-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(32px, 6vw, 80px);
+    padding: 56px clamp(20px, 6vw, 64px);
+    border-top: 1px solid var(--border);
+}
+.game-row:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+.game-visual {
+    flex: 0 0 clamp(220px, 32vw, 380px);
+    aspect-ratio: 4 / 3;
+    background:
+        radial-gradient(circle at 30% 20%, var(--rift-soft), transparent 60%),
+        var(--surface);
+    border: 1px solid var(--border);
+    clip-path: polygon(0 0, 100% 0, 100% 88%, 92% 100%, 0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.game-visual svg {
+    width: 34%;
+    height: 34%;
+}
+
+.game-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.game-name {
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 600;
+    font-size: clamp(26px, 3.4vw, 36px);
+    margin-bottom: 10px;
+}
+
+.game-tagline {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 46ch;
+    margin-bottom: 22px;
+}
+
+.game-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+    font-size: 13px;
+    color: var(--text-dim);
+}
+.meta-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.status-dot.live { background: var(--live); box-shadow: 0 0 6px rgba(52,211,153,0.7); }
+.status-dot.dev  { background: var(--dev);  box-shadow: 0 0 6px rgba(245,158,11,0.7); }
+
+.btn-enter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--bg);
+    background: var(--rift);
+    padding: 12px 24px;
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 94% 100%, 0 100%);
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+}
+.btn-enter:hover { background: #5C9BF5; }
+.btn-enter:active { transform: translateY(1px); }
+.btn-enter svg { width: 14px; height: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-enter { transition: none; }
+}
+
+.crumbs a:focus-visible,
+.back-link:focus-visible,
+.btn-enter:focus-visible {
+    outline: 2px solid var(--rift);
+    outline-offset: 3px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 760px) {
+    .game-row,
+    .game-row:nth-child(even) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 28px;
+        padding: 40px clamp(20px, 6vw, 64px);
+    }
+    .game-visual {
+        width: 100%;
+        flex-basis: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .topbar { padding: 16px 20px; }
+    .hero { padding: 48px 20px 32px; }
+}
